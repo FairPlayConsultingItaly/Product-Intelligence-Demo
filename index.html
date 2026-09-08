@@ -3290,7 +3290,10 @@ function openProductDetail(idx){
     +(typeof prod.price==='number'?'&euro;'+prod.price.toFixed(2).replace('.',','):'n/d')+'</span>';
   priceHtml+='</div>';
   var attrsHtml='';
-  if(prod.color) attrsHtml+='<div class="pdd-attr-row"><span class="pdd-attr-label">Colore</span><span class="pdd-attr-val">'+prod.color+'</span></div>';
+  if(prod.color){
+    var colorVal=prod.color2?prod.color+' (principale), '+prod.color2+' (secondario)':prod.color;
+    attrsHtml+='<div class="pdd-attr-row"><span class="pdd-attr-label">Colore</span><span class="pdd-attr-val">'+colorVal+'</span></div>';
+  }
   var descHtml=prod.desc?'<div class="pdd-desc">'+prod.desc+'</div>':'';
   var genderLbl=_SEASON_GENDER_LBL[prod.gender]||prod.gender||'n/d';
   var stockHtml=prod.stock===true?'<span class="pdd-stock-ok">In stock</span>'
@@ -6116,7 +6119,7 @@ function _finderPassesExcept(p, skipDim){
   if(skipDim!=='catL1'    && finderCatsL1.length>0     && finderCatsL1.indexOf(p.cat)<0)          return false;
   if(skipDim!=='group'    && finderCategories.length>0 && finderCategories.indexOf(p.category)<0) return false;
   if(skipDim!=='specific' && finderSpecifics.length>0  && finderSpecifics.indexOf(p.spec)<0)      return false;
-  if(skipDim!=='color'    && finderColors.length>0     && finderColors.indexOf(p.color)<0)        return false;
+  if(skipDim!=='color'    && finderColors.length>0     && !_productColors(p).some(function(c){return finderColors.indexOf(c)>=0;})) return false;
   if(skipDim!=='price'){
     if(priceMin!==null&&p.price<priceMin) return false;
     if(priceMax!==null&&p.price>priceMax) return false;
@@ -6140,6 +6143,15 @@ function _finderTaxonomyPool(){ return _finderPoolExcept(null, false); }
 function _countBy(list, keyFn){
   var counts={};
   list.forEach(function(r){ var k=keyFn(r.p); if(k) counts[k]=(counts[k]||0)+1; });
+  return counts;
+}
+// Colore primario + secondario (se il nome menziona due colori distinti, es.
+// "Marrone-Nero"): un prodotto compare sotto entrambi i filtri colore, non
+// solo sotto il primario -- niente color singolo indovinato a caso.
+function _productColors(p){ return [p.color,p.color2].filter(Boolean); }
+function _countByMulti(list, keysFn){
+  var counts={};
+  list.forEach(function(r){ keysFn(r.p).forEach(function(k){ if(k) counts[k]=(counts[k]||0)+1; }); });
   return counts;
 }
 function _searchFilterCounts(counts, inputId){
@@ -6179,8 +6191,8 @@ function _rebuildFinderChips(){
   _renderChipList('finder-spec-wrap', _searchFilterCounts(_countBy(specPool, function(p){return p.spec;}),'finder-spec-search'), finderSpecifics, 'toggleFinderSpecific', 'No specific types found');
 
   var colorPool=_finderPoolExcept('color',true);
-  finderColors=finderColors.filter(function(c){return colorPool.some(function(r){return r.p.color===c;});});
-  _renderChipList('finder-color-wrap', _searchFilterCounts(_countBy(colorPool, function(p){return p.color;}),'finder-color-search'), finderColors, 'toggleFinderColor', 'No colors found');
+  finderColors=finderColors.filter(function(c){return colorPool.some(function(r){return _productColors(r.p).indexOf(c)>=0;});});
+  _renderChipList('finder-color-wrap', _searchFilterCounts(_countByMulti(colorPool, _productColors),'finder-color-search'), finderColors, 'toggleFinderColor', 'No colors found');
 }
 function filterFinderCats(q){ _rebuildFinderChips(); }
 function filterFinderSpecifics(q){ _rebuildFinderChips(); }
