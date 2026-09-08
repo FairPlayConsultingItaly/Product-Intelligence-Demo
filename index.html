@@ -12,6 +12,26 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+/* ── AUTH GATE: prima schermata, sopra a tutto -- deterrente per accesso non
+   autorizzato, non sicurezza vera (password in chiaro nel sorgente HTML, come
+   qualunque check lato client). Nascosta dopo la password corretta, ricordata
+   solo per la sessione del browser (sessionStorage, non persiste). ────────── */
+#auth-gate{position:fixed;inset:0;z-index:99999;background:#0d0d0d;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+#auth-gate.unlocked{display:none}
+.auth-box{background:#181716;border:1px solid #2c2a29;border-radius:10px;
+  padding:40px 36px;width:100%;max-width:340px;text-align:center}
+.auth-box .auth-logo{font:800 13px/1.15 "Archivo",Arial,sans-serif;letter-spacing:-.01em;
+  color:#f3f2f2;margin-bottom:24px}
+.auth-box .auth-logo span{color:#dd2b0f}
+.auth-box label{display:block;font-size:.78rem;color:#999;margin-bottom:8px;text-align:left}
+.auth-box input{width:100%;padding:11px 12px;border-radius:6px;border:1.5px solid #333;
+  background:#0d0d0d;color:#f3f2f2;font-size:.95rem;outline:none}
+.auth-box input:focus{border-color:#dd2b0f}
+.auth-box button{width:100%;margin-top:14px;padding:11px;border:none;border-radius:6px;
+  background:#dd2b0f;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer}
+.auth-box button:hover{background:#ae1800}
+.auth-box .auth-error{color:#ff6b6b;font-size:.78rem;margin-top:10px;min-height:1em}
 :root{
   --red:#CC0000;--red-dark:#a30000;--red-light:#fff0f0;
   --gray:#555;--gray-dark:#222;--gray-light:#f5f5f5;
@@ -501,6 +521,44 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 #zoom-stats-table th:first-child{text-align:left}
 #zoom-stats-table td{padding:5px 10px;text-align:right;border-bottom:1px solid #ebebeb;color:#333}
 #zoom-stats-table td:first-child{text-align:left;font-weight:600}
+/* ── PRODUCT DETAIL OVERLAY (Seasons comparison: turnover list -> scheda prodotto) ──
+   Stessa "cornice" del chart-zoom-overlay (sfondo scuro, modale bianco centrato), ma
+   contenuto strutturato come una vera pagina prodotto e-commerce -- solo con i campi che
+   abbiamo davvero nei dati (nessuna taglia/rating/peso inventati). Prefisso "pdd-" (non
+   "pd-": gia' usato dall'overlay di drilldown prodotti esistente, #pd-overlay/.pd-modal). */
+#product-detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:410;align-items:flex-start;justify-content:center;padding:20px 16px;overflow-y:auto}
+#product-detail-overlay.show{display:flex}
+.pdd-modal{background:#fff;border-radius:14px;width:100%;max-width:760px;
+  box-shadow:0 8px 40px rgba(0,0,0,.4);margin:auto;overflow:hidden}
+.pdd-modal-header{display:flex;justify-content:flex-end;padding:10px 10px 0}
+.pdd-breadcrumb{font-size:.72rem;color:#888;padding:0 28px;text-transform:uppercase;letter-spacing:.04em}
+.pdd-breadcrumb span+span:before{content:" \2013 ";color:#ccc}
+.pdd-body{display:flex;gap:28px;padding:14px 28px 28px;flex-wrap:wrap}
+.pdd-img-col{flex:1 1 260px;min-width:220px}
+.pdd-img-col img{width:100%;border-radius:8px;background:#f5f5f5;object-fit:contain;aspect-ratio:1/1}
+.pdd-img-col .pdd-noimg{width:100%;aspect-ratio:1/1;border-radius:8px;background:#f5f5f5;
+  display:flex;align-items:center;justify-content:center;color:#bbb;font-size:.8rem}
+.pdd-info-col{flex:1 1 300px;min-width:260px}
+.pdd-title{font-size:1.3rem;font-weight:800;color:#111;line-height:1.2;margin-bottom:10px}
+.pdd-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.pdd-price{font-size:1.5rem;font-weight:800;color:#111}
+.pdd-price-std{font-size:1rem;color:#999;text-decoration:line-through}
+.pdd-disc-badge{background:#dd2b0f;color:#fff;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:4px}
+.pdd-attr-row{display:flex;gap:8px;margin-bottom:6px;font-size:.85rem}
+.pdd-attr-label{color:#888;min-width:90px}
+.pdd-attr-val{color:#222;font-weight:600}
+.pdd-desc{font-size:.85rem;color:#444;line-height:1.55;margin:16px 0;padding-top:16px;border-top:1px solid #eee}
+.pdd-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-top:16px;padding-top:16px;border-top:1px solid #eee}
+.pdd-meta-item{font-size:.78rem}
+.pdd-meta-item .pdd-meta-lbl{color:#888;display:block;margin-bottom:2px}
+.pdd-meta-item .pdd-meta-val{color:#222;font-weight:700}
+.pdd-stock-ok{color:#1a9c4a}
+.pdd-stock-no{color:#cc2222}
+.pdd-turnover-item{cursor:pointer}
+.pdd-turnover-item:hover{text-decoration:underline}
+.pdd-turnover-more{font-size:10px;color:#000;font-weight:700;margin-top:4px;cursor:pointer}
+.pdd-turnover-more:hover{text-decoration:underline}
 #zoom-stats-table tr:hover td{background:#f9f9f9}
 #compare-cat-table{margin-top:10px;overflow-x:auto;display:none;font-size:.78rem}
 #compare-cat-table table{width:100%;border-collapse:collapse}
@@ -518,6 +576,8 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 .finder-section-label{font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
 .finder-chip{border:1.5px solid var(--border);border-radius:99px;padding:5px 13px;font-size:.82rem;font-weight:600;cursor:pointer;background:#fff;color:var(--muted);transition:all .15s;user-select:none;white-space:nowrap}
 .finder-chip.active{background:var(--gray-dark);border-color:var(--gray-dark);color:#fff}
+.finder-chip-empty{opacity:.35}
+.finder-chip-empty:not(.active){color:#ccc}
 .finder-cat-wrap{max-height:120px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:5px;padding:2px}
 .finder-search-input{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:.86rem;font-family:Arial;outline:none;margin-bottom:8px;color:var(--text)}
 .finder-search-input:focus{border-color:#888}
@@ -541,7 +601,8 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 @media(max-width:900px){.finder-layout{flex-direction:column}.finder-sidebar{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border)}}
 .finder-sort-wrap{display:flex;align-items:center;gap:8px;font-size:.84rem;color:#666}
 .finder-product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;padding:20px 28px 40px}
-.finder-product-card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;transition:all .18s;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.finder-product-card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;transition:all .18s;box-shadow:0 1px 6px rgba(0,0,0,.05);cursor:pointer}
+.finder-product-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);transform:translateY(-1px)}
 .finder-product-card:hover{box-shadow:0 3px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
 .fpc-img{aspect-ratio:1/1;background:#f4f4f4;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .fpc-img img{width:100%;height:100%;object-fit:cover}
@@ -763,10 +824,12 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 #screen-dashboard .di-brand-tags{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
 #screen-dashboard .di-brand-tag{font:600 10px/1 "Archivo";padding:5px 8px;background:rgba(243,242,242,.12)}
 
+#screen-dashboard .di-season-top{padding:14px 16px;border-bottom:1px solid rgba(243,242,242,.2)}
+#screen-dashboard .di-season-top .filter-label{font:800 9px/1 "Archivo";letter-spacing:.16em;color:rgba(243,242,242,.45);text-transform:uppercase}
+#screen-dashboard .di-season-top .season-chip:not(.active){background:none;color:#fff}
+#screen-dashboard .di-season-top .season-chip:not(.active):hover{background:rgba(243,242,242,.12)}
 #screen-dashboard .di-nav{padding:14px 0;display:flex;flex-direction:column;border-bottom:1px solid rgba(243,242,242,.2)}
 #screen-dashboard .di-nav-kicker{font:800 9px/1 "Archivo";letter-spacing:.16em;color:rgba(243,242,242,.45);padding:0 16px 10px}
-#screen-dashboard .di-nav-kicker#di-report-toggle:hover{color:rgba(243,242,242,.8)}
-#screen-dashboard .di-nav-kicker#di-report-toggle.active{color:var(--daccent-on-dark)}
 #screen-dashboard .di-nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font:600 12px/1 "Archivo";
   color:rgba(243,242,242,.75);cursor:pointer;border:none;background:none;text-align:left;width:100%}
 #screen-dashboard .di-nav-item .di-nav-num{opacity:.5;font-size:10px}
@@ -788,7 +851,8 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 #screen-dashboard .di-filters .season-chip:first-child{border-top:0}
 #screen-dashboard .di-filters .gender-btn.active,
 #screen-dashboard .di-filters .sec-chip.active,
-#screen-dashboard .di-filters .season-chip.active{background:#f3f2f2;color:var(--dink);font-weight:800}
+#screen-dashboard .di-filters .season-chip.active,
+#screen-dashboard .di-season-top .season-chip.active{background:#f3f2f2;color:var(--dink);font-weight:800}
 #screen-dashboard .di-filters .filter-select{width:100%;border:1px solid rgba(243,242,242,.3);
   background:var(--dink);color:#f3f2f2;font:600 11.5px/1 "Archivo";padding:8px 10px}
 #screen-dashboard .di-filters .tdiv{display:none}
@@ -898,6 +962,35 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 </style>
 </head>
 <body>
+
+<div id="auth-gate">
+  <div class="auth-box">
+    <div class="auth-logo">PRICE<br><span>INTELLIGENCE</span></div>
+    <label for="auth-pass">Immetti password</label>
+    <input type="password" id="auth-pass" autocomplete="off" onkeydown="if(event.key==='Enter') checkAuthPassword()">
+    <button onclick="checkAuthPassword()">Entra</button>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var PASS = "FairPlay!";
+  if (sessionStorage.getItem("fpc_auth_ok") === "1") {
+    document.getElementById("auth-gate").classList.add("unlocked");
+  }
+  window.checkAuthPassword = function(){
+    var input = document.getElementById("auth-pass");
+    if (input.value === PASS) {
+      sessionStorage.setItem("fpc_auth_ok", "1");
+      document.getElementById("auth-gate").classList.add("unlocked");
+    } else {
+      document.getElementById("auth-error").textContent = "Password errata.";
+      input.value = "";
+      input.focus();
+    }
+  };
+})();
+</script>
 
 <video id="bg-video" autoplay muted loop playsinline>
   <source src="3.%20dashboard%20data/img%20and%20background/FairPlay%20sfondo%20dinamico.mp4" type="video/mp4">
@@ -1096,6 +1189,9 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
   <div class="finder-layout">
     <aside class="finder-sidebar" id="finder-sidebar">
       <div class="finder-section">
+        <div class="di-hint">Product Benchmarking is available for FW26 products only.</div>
+      </div>
+      <div class="finder-section">
         <div class="finder-section-label">Gender</div>
         <div class="chip-row" id="finder-gender-row">
           <div class="finder-chip" id="fgc-M" onclick="toggleFinderGender('M')">&#9794; Men</div>
@@ -1117,6 +1213,12 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
         <div class="finder-section-label">Specific type</div>
         <input type="text" class="finder-search-input" id="finder-spec-search" placeholder="Search specific type..." oninput="filterFinderSpecifics(this.value)" autocomplete="off">
         <div class="finder-cat-wrap" id="finder-spec-wrap"></div>
+      </div>
+      <div class="finder-section">
+        <div class="finder-section-label">Color</div>
+        <div class="di-hint">Color data not available for: Salomon, Columbia, Grisport (site restrictions).</div>
+        <input type="text" class="finder-search-input" id="finder-color-search" placeholder="Search color..." oninput="filterFinderColors(this.value)" autocomplete="off">
+        <div class="finder-cat-wrap" id="finder-color-wrap"></div>
       </div>
       <div class="finder-section">
         <div class="finder-section-label">Price range (&euro;)</div>
@@ -1156,8 +1258,12 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
     <aside class="di-sidebar">
       <div class="di-word" title="Analisi di posizionamento prezzo e assortimento del brand rispetto al mercato outdoor.">PRICE<br><span>INTELLIGENCE</span></div>
       <div class="di-brandblock" id="di-brand-block"></div>
+      <div class="di-field di-season-top">
+        <span class="filter-label">Season</span>
+        <div class="chip-row" id="season-chip-row"></div>
+        <span class="season-scraped-date" id="season-scraped-date"></span>
+      </div>
       <nav class="di-nav" id="di-nav">
-        <div class="di-nav-kicker" id="di-report-toggle" style="cursor:pointer" onclick="toggleReportView()" title="Vedi il report testuale">REPORT</div>
         <button class="di-nav-item active" data-di-sec="overview" onclick="setDiSection('overview')">Overview</button>
         <button class="di-nav-item"        data-di-sec="sec01"    onclick="setDiSection('sec01')"><span class="di-nav-num">01</span>Assortment shape</button>
         <button class="di-nav-item"        data-di-sec="sec02"    onclick="setDiSection('sec02')"><span class="di-nav-num">02</span>Price architecture</button>
@@ -1165,6 +1271,7 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
         <button class="di-nav-item"        data-di-sec="sec04"    onclick="setDiSection('sec04')"><span class="di-nav-num">04</span>Brand vs market</button>
         <button class="di-nav-item"        data-di-sec="sec05"    onclick="setDiSection('sec05')"><span class="di-nav-num">05</span>Group &times; gender detail</button>
         <button class="di-nav-item"        data-di-sec="sec06"    onclick="setDiSection('sec06')"><span class="di-nav-num">06</span>Specific product types</button>
+        <button class="di-nav-item"        data-di-sec="sec07"    onclick="setDiSection('sec07')"><span class="di-nav-num">07</span>Seasons comparison</button>
       </nav>
       <div class="di-filters">
         <div id="tb-filters-hideable" style="display:contents">
@@ -1201,12 +1308,6 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
             </div>
             <div class="cat-compare-badge" id="cat-compare-badge" style="margin-top:6px">&#8644; Group comparison</div>
           </div>
-        </div>
-        <div class="di-field">
-          <span class="filter-label">Season</span>
-          <div class="chip-row" id="season-chip-row"></div>
-          <div class="season-compare-badge" id="season-badge">&#9878; Season comparison</div>
-          <span class="season-scraped-date" id="season-scraped-date"></span>
         </div>
       </div>
       <div class="di-actions">
@@ -1310,6 +1411,15 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
     <div id="pd-body"></div>
   </div>
 </div>
+<div id="product-detail-overlay" onclick="if(event.target===this) closeProductDetail()">
+  <div class="pdd-modal">
+    <div class="pdd-modal-header">
+      <button class="btn-zoom-close" onclick="closeProductDetail()">&#x2715;</button>
+    </div>
+    <div id="pdd-breadcrumb" class="pdd-breadcrumb"></div>
+    <div id="pdd-body" class="pdd-body"></div>
+  </div>
+</div>
 <div id="canvas-tooltip"></div>
 
 <div id="loading-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
@@ -1399,7 +1509,12 @@ var BRAND_META = {
 var BRAND_COLORS = {};
 BRANDS.forEach(function(b){ BRAND_COLORS[b.id] = b.color; });
 var SEASON_COLORS = {SS26:"#CC0000",FW25:"#666666",SS25:"#E05050",FW24:"#999999",SS24:"#B30000",FW23:"#BBBBBB"};
-var SEASON_ORDER  = ["SS26","FW25","SS25","FW24","SS24","FW23"];
+// Ordine da piu' recente a meno recente -- "latest" (loadBrandData) e' sempre
+// il primo elemento di questa lista che il brand possiede. FW26 e' la
+// stagione corrente (vedi current_season_slug() lato Python): deve stare
+// prima di SS26, altrimenti ogni brand viene mostrato con dati Spring-Summer
+// vecchi anche quando la stagione Fall-Winter fresca esiste gia'.
+var SEASON_ORDER  = ["FW26","SS26","FW25","SS25","FW24","SS24","FW23"];
 // ── Punto 3 README QA: value label a fine barra su TUTTI i bar chart Chart.js (single,
 // compare, brand vs mercato, ecc.), sia orizzontali che verticali. Un solo plugin
 // registrato globalmente invece di toccare ogni singola config new Chart({...}), cosi'
@@ -1412,8 +1527,10 @@ var _valueEndLabelsPlugin={
     var isHorizontal=chart.options.indexAxis==='y';
     var valueScale=isHorizontal?chart.scales.x:chart.scales.y;
     var titleText=(valueScale&&valueScale.options&&valueScale.options.title&&valueScale.options.title.text)||'';
+    var absValues=!!(chart.options.plugins&&chart.options.plugins.valueEndLabels&&chart.options.plugins.valueEndLabels.absValues);
     function fmt(v){
       if(v===null||v===undefined||isNaN(v)) return '';
+      if(absValues) v=Math.abs(v);
       if(titleText.indexOf('€')>=0) return '€'+Math.round(v);
       if(titleText.indexOf('%')>=0) return Math.round(v)+'%';
       return String(Math.round(v));
@@ -1431,16 +1548,28 @@ var _valueEndLabelsPlugin={
         var label=fmt(typeof v==='object'?(v.y!=null?v.y:v.x):v);
         if(!label||!bar) return;
         if(isHorizontal){
-          ctx.textAlign='left'; ctx.textBaseline='middle';
-          // Punto 9/10: se la barra tocca (o quasi) il bordo destro dell'area del grafico,
-          // l'etichetta "bar.x+4" finirebbe fuori dal canvas ed essere tagliata/invisibile.
-          // Clampata cosi' l'etichetta resta sempre dentro chartArea.right, anche a costo
-          // di sovrapporsi leggermente alla punta della barra.
-          var _maxX=(chart.chartArea?chart.chartArea.right:ctx.canvas.width)-2;
+          ctx.textBaseline='middle';
+          var _rawV=typeof v==='object'?(v.y!=null?v.y:v.x):v;
           var _tw=ctx.measureText(label).width;
-          var _x=bar.x+4;
-          if(_x+_tw>_maxX) _x=Math.max(bar.x-_tw-2,_maxX-_tw);
-          ctx.fillText(label,_x,bar.y);
+          if(_rawV<0){
+            // Barra negativa (es. lato sinistro di un butterfly chart): l'etichetta va
+            // fuori dalla punta SINISTRA della barra, non a destra come nel caso positivo.
+            ctx.textAlign='right';
+            var _minX=(chart.chartArea?chart.chartArea.left:0)+2;
+            var _x=bar.x-4;
+            if(_x-_tw<_minX) _x=Math.min(bar.x+_tw+2,_minX+_tw);
+            ctx.fillText(label,_x,bar.y);
+          } else {
+            ctx.textAlign='left';
+            // Punto 9/10: se la barra tocca (o quasi) il bordo destro dell'area del grafico,
+            // l'etichetta "bar.x+4" finirebbe fuori dal canvas ed essere tagliata/invisibile.
+            // Clampata cosi' l'etichetta resta sempre dentro chartArea.right, anche a costo
+            // di sovrapporsi leggermente alla punta della barra.
+            var _maxX=(chart.chartArea?chart.chartArea.right:ctx.canvas.width)-2;
+            var _x=bar.x+4;
+            if(_x+_tw>_maxX) _x=Math.max(bar.x-_tw-2,_maxX-_tw);
+            ctx.fillText(label,_x,bar.y);
+          }
         } else {
           ctx.textAlign='center'; ctx.textBaseline='bottom';
           ctx.fillText(label,bar.x,bar.y-2);
@@ -1494,6 +1623,7 @@ var finderGenders = [];
 var finderCatsL1 = [];
 var finderCategories = [];
 var finderSpecifics = [];
+var finderColors = [];
 var finderExcludedBrands = [];
 var finderResults = [];
 var _allCats = null;
@@ -1910,6 +2040,8 @@ function rebuildSeasonChips(){
   }
   var avail = SEASON_ORDER.filter(function(s){ return seasonSet[s]; });
   Object.keys(seasonSet).forEach(function(s){ if(avail.indexOf(s)<0) avail.push(s); });
+  // Sempre esattamente una stagione selezionata: di default la piu' recente disponibile.
+  if(selectedSeasons.length===0 && avail.length) selectedSeasons=[avail[0]];
 
   var row = document.getElementById('season-chip-row'); if(!row) return;
   row.innerHTML = '';
@@ -1920,8 +2052,6 @@ function rebuildSeasonChips(){
     chip.onclick = function(){ toggleSeason(s); };
     row.appendChild(chip);
   });
-  var badge = document.getElementById('season-badge');
-  if(badge) badge.className = 'season-compare-badge'+(selectedSeasons.length>=2?' show':'');
 
   // Data di scraping (mese/anno, da ts_utc = prima colonna del file sorgente) dei brand
   // selezionati -- quando i dati sono stati effettivamente raccolti dal sito del brand.
@@ -2027,16 +2157,6 @@ function switchSingleTab(bid,tab){
     rCt.dataset.rendered='1';
   }
 }
-// Punto 3/10: il vecchio switcher "Grafici/Report" a bottoni e' stato rimosso; la voce
-// "REPORT" statica in cima alla sidebar (#di-report-toggle) e' ora cliccabile e richiama
-// questa funzione, che riusa lo stesso switchSingleTab() gia' usato per il tab Report.
-function toggleReportView(){
-  if(!activeTab || activeTab==='compare') return;
-  var toggle=document.getElementById('di-report-toggle');
-  var goingToReport = !(toggle && toggle.className.indexOf('active')>=0);
-  switchSingleTab(activeTab, goingToReport?'report':'charts');
-  if(toggle) toggle.className='di-nav-kicker'+(goingToReport?' active':'');
-}
 function _dsecHeader(num,title,sub){
   return '<div class="dsec-header"><span class="dsec-num">'+num+'</span><span class="dsec-title">'+title+'</span><span class="dsec-sub">'+sub+'</span></div>';
 }
@@ -2127,10 +2247,64 @@ function chartsHTMLSingle(bid){
     +'<div id="method-strip-'+bid+'"></div>'
     +'</div>'
 
+    // ── 07 Seasons comparison ───────────────────────────────────────────────
+    // Stessa struttura a blocchi di 01→02→03 (assortment shape, price architecture,
+    // group price & mix), applicata a FW26 vs SS26 invece che a brand vs mercato --
+    // niente grafici "non comparabili" come la matrice a bande di sec03 (vedi blocco 3).
+    +'<div class="di-section" data-di-sec="sec07" id="seasoncmp-'+bid+'">'
+    // Blocco 1 (rispecchia sec01): treemap + heatmap, SS26 (piu' vecchia) prima di FW26 --
+    // stessa convenzione cronologica sinistra/prima->destra/dopo di tutto il resto della
+    // sezione 7. Impilate a tutta larghezza (come gia' fa sec01 per lo stesso motivo:
+    // di-main e' stretto per l'insight rail) e non affiancate: meta' larghezza non basta al
+    // layout del treemap con 5+ gruppi, produce rettangoli troppo piccoli/sovrapposti
+    // (verificato via screenshot).
+    +'<div class="charts-row" style="grid-template-columns:1fr">'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Group assortment — SS26</span></div>'
+        +'<div class="chart-inner" id="treemap-scss-'+bid+'"></div>'
+        +'<div class="treemap-legend" id="treemap-legend-scss-'+bid+'"></div></div>'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Group assortment — FW26</span></div>'
+        +'<div class="chart-inner" id="treemap-scfw-'+bid+'"></div>'
+        +'<div class="treemap-legend" id="treemap-legend-scfw-'+bid+'"></div></div>'
+    +'</div>'
+    +'<div class="charts-row">'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Gender × category — SS26</span></div>'
+        +'<div class="heatmap-wrap"><div id="heatmap-scss-'+bid+'"></div></div></div>'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Gender × category — FW26</span></div>'
+        +'<div class="heatmap-wrap"><div id="heatmap-scfw-'+bid+'"></div></div></div>'
+    +'</div>'
+    // Blocco 2 (rispecchia sec02): boxplot + bar + histogram, FW26 vs SS26 come serie
+    // affiancate per product group (stesso pattern grouped gia' usato altrove).
+    +'<div class="charts-row" style="grid-template-columns:1fr">'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Price range by group: FW26 vs SS26</span></div>'
+        +'<div class="chart-inner-boxplot" id="seasoncmp-boxwrap-'+bid+'"><canvas id="seasoncmp-canvas1-'+bid+'"></canvas></div></div>'
+    +'</div>'
+    +'<div class="charts-row">'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">SKU count by group: FW26 vs SS26</span></div>'
+        +'<div class="chart-inner" style="height:320px"><canvas id="seasoncmp-canvas2-'+bid+'"></canvas></div></div>'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">SKU price distribution: FW26 vs SS26</span></div>'
+        +'<div class="chart-inner-tall"><canvas id="seasoncmp-canvas3-'+bid+'"></canvas></div></div>'
+    +'</div>'
+    // Blocco 3 (equivalente comparabile di sec03): tabella variazioni KPI per gruppo,
+    // non la matrice a bande di prezzo (non leggibile su 2 stagioni x N bande).
+    +'<div class="charts-row" style="grid-template-columns:1fr">'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Group price &amp; mix: FW26 vs SS26</span></div>'
+        +'<div id="seasoncmp-kpitable-'+bid+'"></div></div>'
+    +'</div>'
+    // Blocco 4 (extra, nessun equivalente in 01-06): turnover modelli + mix shift.
+    +'<div class="charts-row">'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">New vs discontinued models</span></div>'
+        +'<div id="seasoncmp-turnover-'+bid+'"></div></div>'
+      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Gender &amp; category mix: FW26 vs SS26</span></div>'
+        +'<div id="seasoncmp-donuts-'+bid+'" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
+          +'<div style="flex:1;min-width:140px;max-width:220px"><canvas id="seasoncmp-donut-gender-'+bid+'"></canvas></div>'
+          +'<div style="flex:1;min-width:140px;max-width:220px"><canvas id="seasoncmp-donut-cat-'+bid+'"></canvas></div>'
+        +'</div></div>'
+    +'</div>'
+    +'</div>'
+
     +'</div>' // .di-main
   +'</div>' // .charts-area
-  +'</div>' // #stabcontent-charts
-  +'<div class="single-tab-content" id="stabcontent-report-'+bid+'"></div>';
+  +'</div>'; // #stabcontent-charts
 }
 // ── 1b: nav a 6 sezioni (sidebar) — mostra/nasconde i blocchi .di-section e
 // aggiorna header/kicker. "Overview" (KPI + price ladder) e' una sezione a se',
@@ -2148,16 +2322,14 @@ var DI_SECTIONS={
   sec05:{kicker:'05 — GROUP × GENDER DETAIL',title:'Full brand vs market breakdown',
     desc:'Confronto vs mercato dei prezzi medi per categoria di prodotto e genere: per ogni combinazione gruppo × genere, il prezzo medio del brand rispetto alla media di mercato sullo stesso segmento.'},
   sec06:{kicker:'06 — SPECIFIC PRODUCT TYPES',title:'Tax specific vs group reference, brand vs market',
-    desc:'Prezzo medio per tipologia di prodotto puntuale (tax specific, es. il singolo modello di scarpa), confrontato con il gruppo merceologico di riferimento e con il mercato, per individuare nicchie di prezzo specifiche.'}
+    desc:'Prezzo medio per tipologia di prodotto puntuale (tax specific, es. il singolo modello di scarpa), confrontato con il gruppo merceologico di riferimento e con il mercato, per individuare nicchie di prezzo specifiche.'},
+  sec07:{kicker:'07 — SEASONS COMPARISON',title:'FW26 vs SS26: assortment, price and mix shifts',
+    desc:'Confronto diretto tra le due stagioni disponibili per questo brand: dove il catalogo si e\' ampliato o ristretto, come si e\' spostato il posizionamento di prezzo, quali modelli sono nuovi o usciti di listino, e come e\' cambiato il mix di genere e categoria.'}
 };
 var _diActiveSection='overview';
 function setDiSection(sec){
   _diActiveSection=sec;
-  // Punto 3/10: navigare tra le sezioni riporta sempre alla vista grafici (il Report,
-  // attivato dalla voce "REPORT" della sidebar, e' una vista testuale separata).
   if(activeTab && activeTab!=='compare') switchSingleTab(activeTab,'charts');
-  var reportToggle=document.getElementById('di-report-toggle');
-  if(reportToggle) reportToggle.className='di-nav-kicker';
   document.querySelectorAll('#screen-dashboard .di-nav-item').forEach(function(btn){
     btn.className='di-nav-item'+(btn.getAttribute('data-di-sec')===sec?' active':'');
   });
@@ -2409,57 +2581,6 @@ function _reportInsightHtml(r,visualHtml){
       +'<div class="ri-insight">'+r.insight+'</div>'
     +'</div></div>';
 }
-function buildReportHTML(bid){
-  var d=computeReportData(bid);
-  if(!d.nSku){
-    return '<div class="report-wrap"><p class="report-p">Dati non ancora disponibili per generare il report di questo brand.</p></div>';
-  }
-  var priceDeltaPct=(typeof d.avgPriceOthers==='number'&&d.avgPriceOthers)?Math.round((d.avgPrice-d.avgPriceOthers)/d.avgPriceOthers*100):null;
-
-  var html='';
-  html+='<div class="report-wrap">';
-
-  // HERO
-  html+='<div class="report-hero">'
-    +'<div class="report-kicker">Report di posizionamento</div>'
-    +'<div class="report-title">'+d.brand.name+'</div>'
-    +'<div class="report-subtitle">'+(d.meta.desc||'Analisi del posizionamento competitivo basata sui dati raccolti.')+'</div>'
-    +'<div class="report-meta">Generato automaticamente dai dati della dashboard'
-    +(d.hasPeers?' &middot; confrontato con gli altri '+d.nPeers+' brand del mercato outdoor':' &middot; nessun altro brand nel dataset per questo confronto')+'</div>'
-    +'</div>';
-
-  // Istruzione C, punto 1: prima i dati principali -- Overview + Assortment Shape (01).
-  html+='<div class="report-section"><div class="report-h2">Overview &amp; assortment</div>';
-  var metaBits=[];
-  if(d.meta.hq) metaBits.push('con sede a <b>'+d.meta.hq+'</b>');
-  if(d.meta.founded) metaBits.push('fondata nel <b>'+d.meta.founded+'</b>');
-  html+='<p class="report-p">'+d.brand.name+(metaBits.length?', '+metaBits.join(' e '):'')+', propone un catalogo di <b>'+d.nSku+' SKU</b>'
-    +(typeof d.avgPriceOthers==='number'?(', prezzo medio <b>€'+d.avgPrice+'</b> ('+_pctPhrase(priceDeltaPct)+', mercato €'+d.avgPriceOthers+')'):', prezzo medio <b>€'+d.avgPrice+'</b>')
-    +'. '+(d.topCat?('Il gruppo più rappresentato è <b>'+d.topCat.key+'</b> ('+d.topCat.n+' SKU, '+Math.round(d.topCat.n/d.nSku*100)+'% del catalogo).'):'')
-    +'</p>';
-  var secCountsR={}; (RAW_DATA[bid]||[]).forEach(function(p){ if(p.section) secCountsR[p.section]=(secCountsR[p.section]||0)+1; });
-  var sectionsCoveredR=Object.keys(secCountsR).length;
-  var genderCoveredListR=['M','F','K','U'].filter(function(g){return d.genderCounts[g];});
-  html+='<p class="report-p">Copertura assortimento: <b>'+sectionsCoveredR+'/4 categorie</b> ('+Object.keys(secCountsR).map(function(s){return SECTION_LABELS_JS[s]||s;}).join(', ')+') e <b>'+genderCoveredListR.length+'/4 generi</b> ('+genderCoveredListR.map(function(g){return cap(_GENDER_LBL_IT[g]);}).join(', ')+').</p>';
-  html+='</div>';
-
-  // Istruzione C, punto 3: sintesi finale derivata da quanto mostrato sopra (non ripetizione).
-  html+='<div class="report-closing"><div class="report-h2">Sintesi</div>';
-  if(d.hasPeers){
-    var leadPrice=(d.groupDeltas||[]).concat(d.sectionDeltas||[]).filter(function(g){return Math.abs(g.pct)<=100;})
-      .sort(function(a,b){return Math.abs(b.pct)-Math.abs(a.pct);})[0];
-    var parts=[];
-    if(priceDeltaPct!==null) parts.push('un posizionamento di prezzo complessivo '+(priceDeltaPct>=0?'premium':'value')+' ('+_pctPhrase(priceDeltaPct)+' sulla media dei gruppi in cui opera)');
-    if(leadPrice) parts.push('lo scostamento piu\' marcato osservato in un singolo gruppo/categoria presidiato e\' '+_pctPhrase(leadPrice.pct)+' (probabile causa nella tipologia di prodotto assente, vedi sopra)');
-    html+='<p class="report-p">In sintesi, '+d.brand.name+' mostra '+(parts.length?parts.join('; ')+'.':'un posizionamento in linea con il mercato, senza scostamenti rilevanti.')+' Questi elementi vanno letti come indicazioni di posizionamento, non necessariamente come criticita\': un prezzo o un mix diverso dalla media di mercato in un gruppo presidiato riflette spesso una scelta di gamma, non un problema.</p>';
-  } else {
-    html+='<p class="report-p">'+d.brand.name+' è l\'unico brand presente nel dataset outdoor: le metriche di catalogo e prezzo sopra sono descrittive del brand, non di un confronto di mercato.</p>';
-  }
-  html+='</div>';
-
-  html+='</div>';
-  return html;
-}
 function chartsHTMLCompare(){
   var treemapCols=selectedBrands.map(function(bid){
     var b=getBrand(bid)||{name:bid,color:'#CC0000'};
@@ -2511,6 +2632,7 @@ function chartsHTMLCompare(){
       +'<div class="charts-row">'+ggCols+'</div>'
     +'</div>'
     +'<div class="di-section" data-di-sec="sec06">'+_naMsg+'</div>'
+    +'<div class="di-section" data-di-sec="sec07">'+_naMsg+'</div>'
     +'</div>' // .di-main
   +'</div>';
 }
@@ -2563,24 +2685,17 @@ function rebuildCategoryDropdown(){
   sel.value=catSet[prev]?prev:"all"; filterCategory=sel.value;
   var zsel=document.getElementById("zoom-sel-category"); if(zsel){ zsel.innerHTML=optHtml; zsel.value=filterCategory; }
 }
+// Selezione stagione a scelta singola (radio-like): cliccare una stagione mostra
+// solo i dati di quella, mai un mix di piu' stagioni insieme.
 function toggleSeason(s){
-  var idx=selectedSeasons.indexOf(s);
-  if(idx>=0){
-    selectedSeasons.splice(idx,1);
-    refreshSeasonChips(); triggerRender();
-  } else {
-    selectedSeasons.push(s);
-    refreshSeasonChips();
-    var loads=selectedBrands.map(function(bid){ return loadBrandSeasonData(bid,s); });
-    if(loads.length){
-      showLoadingOverlay('Caricamento stagione '+s+'...');
-      Promise.all(loads).then(function(){ hideLoadingOverlay(); _allCats=null; triggerRender(); });
-    } else {
-      triggerRender();
-    }
-  }
+  if(selectedSeasons.length===1 && selectedSeasons[0]===s) return;
+  selectedSeasons=[s];
+  refreshSeasonChips();
+  var loads=selectedBrands.map(function(bid){ return loadBrandSeasonData(bid,s); });
+  showLoadingOverlay('Caricamento stagione '+s+'...');
+  Promise.all(loads).then(function(){ hideLoadingOverlay(); _allCats=null; triggerRender(); });
 }
-function isSeasonCompare(){ return selectedSeasons.length>=2; }
+function isSeasonCompare(){ return false; }
 function isCategoryCompare(){ return filterCategories.length>=2; }
 function getCategoryGroups(){
   return filterCategories.map(function(cat,i){
@@ -2680,6 +2795,10 @@ function renderSingle(brandId){
     }, brandId);
   } else {
     var catItems2=getCatItems(prods);
+    // Ordinati per N. SKU decrescente, non alfabetico -- i gruppi piu' rilevanti per il
+    // brand vanno letti per primi (stesso criterio gia' usato in Seasons comparison).
+    var _catCounts2={}; prods.forEach(function(p){ if(p.category) _catCounts2[p.category]=(_catCounts2[p.category]||0)+1; });
+    catItems2.sort(function(a,b){ return (_catCounts2[b.key]||0)-(_catCounts2[a.key]||0); });
     var c2none=document.getElementById("catcard2-"+scope); if(c2none) c2none.style.display="none";
     setTitle("ctitle1-"+scope,"Price range by group");
     setTitle("ctitle3-"+scope,"SKU price distribution");
@@ -2687,6 +2806,10 @@ function renderSingle(brandId){
       function(cat){var out=[];for(var i=0;i<prods.length;i++) if(prods[i].category===cat) out.push(prods[i].price);return out;},brandId);
     drawPriceHistogram("canvas3-"+scope, brandGroup, function(){return prods;}, brandId);
   }
+  // Solo quando la sezione e' davvero visibile: se chiamata mentre e' display:none (es. al
+  // primo render su Overview), il treemap misurerebbe clientWidth=0 e verrebbe segnato come
+  // gia' renderizzato per sempre con un layout rotto (verificato via screenshot).
+  if(_diActiveSection==='sec07') ensureSeasonComparison(brandId);
 }
 
 // ── RENDER CONFRONTO ──────────────────────────────────────────────────────
@@ -3011,6 +3134,250 @@ function renderPriceLadder(containerId, prods, bid){
     +(nHidden>0?', '+nHidden+' escluse per range di prezzo non significativo (troppi pochi SKU o tutti allo stesso prezzo)':'')
     +(widest?'. Il range di prezzo piu\' ampio e\' su <b>'+widest.label+'</b> (&euro;'+Math.round(widest.bSt.q1)+'&ndash;&euro;'+Math.round(widest.bSt.q3)+').':'.')+'</div>';
   container.innerHTML=html;
+}
+
+// ── 07 SEASONS COMPARISON ────────────────────────────────────────────────
+// Confronto FW26 vs SS26 per un singolo brand: a differenza del resto della
+// dashboard (che mostra sempre UNA sola stagione, quella scelta nel
+// selettore in alto) questa sezione carica ENTRAMBE le stagioni apposta,
+// indipendentemente dalla stagione attiva altrove -- e' l'unico posto dove
+// le due stagioni convivono. Non disponibile in Brand Comparison (vedi
+// _naMsg in chartsHTMLCompare) perche' richiede gia' 2 dataset per brand.
+var _seasonCmpLoading={};
+// SS26 (piu' vecchia) a sinistra, FW26 (piu' recente) a destra -- ordine cronologico.
+var _seasonCmpGroups=[{key:'SS26',label:'SS26',color:COLOR_MARKET},{key:'FW26',label:'FW26',color:COLOR_BRAND}];
+// Come getCatItems, ma ordinato per N. SKU totale (FW26+SS26) decrescente invece che
+// alfabetico -- i gruppi piu' rilevanti per il brand vanno letti per primi nei grafici.
+function _seasonSortedCatItems(fw,ss){
+  var counts={};
+  fw.forEach(function(p){ if(p.category) counts[p.category]=(counts[p.category]||0)+1; });
+  ss.forEach(function(p){ if(p.category) counts[p.category]=(counts[p.category]||0)+1; });
+  return Object.keys(counts).map(function(k){return {key:k,label:groupLabelWithCategory(k),n:counts[k]};})
+    .sort(function(a,b){return b.n-a.n;});
+}
+function ensureSeasonComparison(bid){
+  if(!bid||bid==='compare') return;
+  var container=document.getElementById('seasoncmp-'+bid); if(!container) return;
+  if(container.dataset.rendered||_seasonCmpLoading[bid]) return;
+  _seasonCmpLoading[bid]=true;
+  Promise.all(['FW26','SS26'].map(function(s){ return loadBrandSeasonData(bid,s); })).then(function(){
+    delete _seasonCmpLoading[bid];
+    var c2=document.getElementById('seasoncmp-'+bid); if(!c2) return; // brand cambiato nel frattempo
+    var all=RAW_DATA[bid]||[];
+    var fw=all.filter(function(p){return p.season==='FW26';});
+    var ss=all.filter(function(p){return p.season==='SS26';});
+    c2.dataset.rendered='1';
+    if(!fw.length||!ss.length){
+      var box=document.getElementById('seasoncmp-boxwrap-'+bid);
+      if(box) box.innerHTML='<div style="padding:20px;color:#aaa;text-align:center;font-size:13px">Dati non disponibili per entrambe le stagioni per questo brand.</div>';
+      ['seasoncmp-kpitable-','seasoncmp-turnover-'].forEach(function(id){
+        var el=document.getElementById(id+bid); if(el) el.innerHTML='';
+      });
+      return;
+    }
+    // Blocco 1: treemap + heatmap, FW26 e SS26 affiancate.
+    renderTreemap('treemap-scfw-'+bid, fw, 'category', bid);
+    renderTreemap('treemap-scss-'+bid, ss, 'category', bid);
+    renderHeatmap('heatmap-scfw-'+bid, fw, bid);
+    renderHeatmap('heatmap-scss-'+bid, ss, bid);
+    // Blocco 2: boxplot + bar + histogram grouped by season (stesso pattern usato per
+    // brand vs mercato, qui con FW26/SS26 come le due serie invece di brand/mercato).
+    // Ordinati per N. SKU totale (FW26+SS26) decrescente, non alfabetico -- i gruppi piu'
+    // rilevanti per il brand vanno letti per primi.
+    var catItems=_seasonSortedCatItems(fw, ss);
+    drawBoxplotGrouped('seasoncmp-canvas1-'+bid,'seasoncmp-boxwrap-'+bid,catItems,_seasonCmpGroups,
+      function(cat,season){var src=season==='FW26'?fw:ss,out=[];for(var i=0;i<src.length;i++) if(src[i].category===cat) out.push(src[i].price);return out;},bid);
+    drawBarGrouped('seasoncmp-canvas2-'+bid,catItems,_seasonCmpGroups,
+      function(cat,season){var src=season==='FW26'?fw:ss,c=0;for(var i=0;i<src.length;i++) if(src[i].category===cat) c++;return c;});
+    drawPriceHistogram('seasoncmp-canvas3-'+bid,_seasonCmpGroups,function(season){return season==='FW26'?fw:ss;},bid);
+    // Blocco 3 (equivalente comparabile di sec03) + blocco 4 (extra).
+    renderSeasonKpiTable('seasoncmp-kpitable-'+bid, fw, ss);
+    renderSeasonTurnover('seasoncmp-turnover-'+bid, fw, ss);
+    renderSeasonDonuts(bid, fw, ss);
+  });
+}
+// 3) Tabella variazioni KPI: N.SKU / Avg Price / Core Price Range per categoria macro
+// (coverage) e per product group, FW26 vs SS26 vs Delta%, con frecce colorate.
+// oldV = SS26 (precedente), newV = FW26 (successiva) -- SS26 esce prima nell'anno solare,
+// FW26 dopo, quindi il delta va letto come "FW26 rispetto a SS26", non il contrario.
+function _seasonDeltaHtml(oldV,newV,higherIsGood){
+  if(!oldV&&oldV!==0) return '<span style="color:#aaa">n/a</span>';
+  if(!newV&&newV!==0) return '<span style="color:#aaa">n/a</span>';
+  if(!oldV) return newV>0?'<span style="color:#1a9c4a">&#9650; new</span>':'<span style="color:#aaa">&#8212;</span>';
+  // oldV(SS26)>0 ma newV(FW26)=0: non e' un calo del 100%, e' che il gruppo e' sparito nella
+  // stagione successiva -- stesso grigio scuro del testo "Group", non rosso (non e' una
+  // variazione percentuale leggibile).
+  if(!newV) return '<span style="color:#444;font-weight:700">Discontinued</span>';
+  var pct=Math.round((newV-oldV)/oldV*100);
+  if(Math.abs(pct)<3) return '<span style="color:#999">&#8212; '+pct+'%</span>';
+  var good=(higherIsGood===false)?(pct<0):(pct>0);
+  var color=good?'#1a9c4a':'#cc2222';
+  var arrow=pct>0?'&#9650;':'&#9660;';
+  return '<span style="color:'+color+';font-weight:700">'+arrow+' '+(pct>0?'+':'')+pct+'%</span>';
+}
+function renderSeasonKpiTable(containerId, fw, ss){
+  var container=document.getElementById(containerId); if(!container) return;
+  var SLABELS={"abbigliamento":"Apparel","scarpe":"Footwear","accessori":"Accessories","equipment":"Equipment"};
+  var fwSec={}, ssSec={};
+  fw.forEach(function(p){ if(p.section) fwSec[p.section]=(fwSec[p.section]||0)+1; });
+  ss.forEach(function(p){ if(p.section) ssSec[p.section]=(ssSec[p.section]||0)+1; });
+  var covRows=Object.keys(SLABELS).filter(function(k){return fwSec[k]||ssSec[k];}).map(function(k){
+    return '<tr><td style="text-align:left">'+SLABELS[k]+'</td><td>'+(ssSec[k]||0)+'</td><td>'+(fwSec[k]||0)+'</td><td>'+_seasonDeltaHtml(ssSec[k]||0,fwSec[k]||0)+'</td></tr>';
+  }).join('');
+  var keys={}; fw.forEach(function(p){if(p.category) keys[p.category]=true;}); ss.forEach(function(p){if(p.category) keys[p.category]=true;});
+  var grpRows=Object.keys(keys).map(function(k){
+    var fwP=fw.filter(function(p){return p.category===k;}), ssP=ss.filter(function(p){return p.category===k;});
+    var fwB=fwP.length?computeStatBlock(fwP):null, ssB=ssP.length?computeStatBlock(ssP):null;
+    return {label:groupLabelWithCategory(k),fwB:fwB,ssB:ssB,n:(fwB?fwB.n:0)+(ssB?ssB.n:0)};
+  }).sort(function(a,b){return b.n-a.n;});
+  function rangeStr(b){ return b?('€'+Math.round(b.coreMin)+'–€'+Math.round(b.coreMax)):'<span style="color:#aaa">n/a</span>'; }
+  var groupRowsHtml=grpRows.map(function(r){
+    return '<tr><td style="text-align:left">'+r.label+'</td>'
+      +'<td>'+(r.ssB?r.ssB.n:0)+'</td><td>'+(r.fwB?r.fwB.n:0)+'</td><td>'+_seasonDeltaHtml(r.ssB?r.ssB.n:0,r.fwB?r.fwB.n:0)+'</td>'
+      +'<td>'+(r.ssB?'€'+r.ssB.avgPrice:'<span style="color:#aaa">n/a</span>')+'</td>'
+      +'<td>'+(r.fwB?'€'+r.fwB.avgPrice:'<span style="color:#aaa">n/a</span>')+'</td>'
+      +'<td>'+_seasonDeltaHtml(r.ssB?r.ssB.avgPrice:0,r.fwB?r.fwB.avgPrice:0)+'</td>'
+      +'<td style="font-size:10px">'+rangeStr(r.ssB)+'</td><td style="font-size:10px">'+rangeStr(r.fwB)+'</td></tr>';
+  }).join('');
+  container.innerHTML='<div style="margin-bottom:6px;font:800 10px Archivo;letter-spacing:.08em;color:#888;text-transform:uppercase">Coverage (macro-category)</div>'
+    +'<table class="gg-table"><thead><tr><th class="row-hdr">Category</th><th>SS26 SKU</th><th>FW26 SKU</th><th>&Delta;</th></tr></thead><tbody>'+covRows+'</tbody></table>'
+    +'<div style="margin:18px 0 6px;font:800 10px Archivo;letter-spacing:.08em;color:#888;text-transform:uppercase">By product group</div>'
+    +'<table class="gg-table"><thead><tr><th class="row-hdr">Group</th><th>SS26<br>N.SKU</th><th>FW26<br>N.SKU</th><th>&Delta;</th>'
+    +'<th>SS26<br>Avg &euro;</th><th>FW26<br>Avg &euro;</th><th>&Delta;</th><th>SS26<br>Core range</th><th>FW26<br>Core range</th></tr></thead><tbody>'+groupRowsHtml+'</tbody></table>';
+}
+// 4) Turnover: modelli nuovi in SS26 (assenti in FW26) e usciti di listino (in FW26, non
+// piu' in SS26) -- riconciliati per nome prodotto (piu' stabile dello SKU, che spesso
+// cambia a ogni stagione anche per lo stesso modello/colore).
+var _pddProducts=[]; // lookup per gli <li> cliccabili: indice -> oggetto prodotto (vedi openProductDetail)
+function renderSeasonTurnover(containerId, fw, ss){
+  var container=document.getElementById(containerId); if(!container) return;
+  var fwByName={}, ssByName={};
+  fw.forEach(function(p){ if(p.name && !fwByName[p.name]) fwByName[p.name]=p; });
+  ss.forEach(function(p){ if(p.name && !ssByName[p.name]) ssByName[p.name]=p; });
+  var discontinued=Object.keys(fwByName).filter(function(n){return !ssByName[n];}).sort();
+  var added=Object.keys(ssByName).filter(function(n){return !fwByName[n];}).sort();
+  var unchanged=Object.keys(fwByName).filter(function(n){return ssByName[n];}).sort();
+  function itemHtml(prod,hideIt){
+    var idx=_pddProducts.length; _pddProducts.push(prod);
+    return '<li class="pdd-turnover-item'+(hideIt?' pdd-more-hidden':'')+'"'+(hideIt?' style="display:none"':'')+' onclick="openProductDetail('+idx+')">'+prod.name+'</li>';
+  }
+  function listHtml(names,byName,label,color){
+    return '<div style="flex:1;min-width:180px">'
+      +'<div style="font:800 20px Archivo;color:'+color+'">'+names.length+'</div>'
+      +'<div style="font:700 10px Archivo;letter-spacing:.08em;color:#888;text-transform:uppercase;margin-bottom:8px">'+label+'</div>'
+      +(names.length?'<ul style="margin:0;padding-left:16px;font-size:11px;color:#000;line-height:1.6">'
+        +names.map(function(n,i){return itemHtml(byName[n],i>=8);}).join('')+'</ul>'
+        +(names.length>8?'<div class="pdd-turnover-more" onclick="toggleTurnoverMore(this)">+'+(names.length-8)+' altri</div>':'')
+        :'<div style="font-size:11px;color:#aaa">Nessuno</div>')
+      +'</div>';
+  }
+  container.innerHTML='<div style="display:flex;gap:24px;flex-wrap:wrap">'
+    +listHtml(added,ssByName,'New in SS26 (not in FW26)','#1a9c4a')
+    +listHtml(unchanged,fwByName,'Carried over (in both seasons)','#7d7979')
+    +listHtml(discontinued,fwByName,'Discontinued (FW26 only)','#cc2222')
+    +'</div>';
+}
+// Scheda prodotto (overlay): aperta cliccando un nome nella lista turnover. Mostra solo i
+// campi che abbiamo davvero nel dato esportato (product_name, price, color, image, sku,
+// url, gender/category/group/spec, stock, season) -- nessuna taglia/rating/peso inventati,
+// come da richiesta esplicita.
+function openProductDetail(idx){
+  var prod=_pddProducts[idx]; if(!prod) return;
+  var bc=document.getElementById('pdd-breadcrumb');
+  var crumbs=[prod.cat,prod.category,prod.spec].filter(Boolean).map(function(c){return '<span>'+c+'</span>';});
+  bc.innerHTML=crumbs.join('');
+  var priceHtml='<div class="pdd-price-row"><span class="pdd-price">'
+    +(typeof prod.price==='number'?'&euro;'+prod.price.toFixed(2).replace('.',','):'n/d')+'</span>';
+  if(typeof prod.price_std==='number' && prod.price_std>prod.price){
+    priceHtml+='<span class="pdd-price-std">&euro;'+prod.price_std.toFixed(2).replace('.',',')+'</span>';
+    if(prod.disc) priceHtml+='<span class="pdd-disc-badge">-'+prod.disc+'%</span>';
+  }
+  priceHtml+='</div>';
+  var attrsHtml='';
+  if(prod.color) attrsHtml+='<div class="pdd-attr-row"><span class="pdd-attr-label">Colore</span><span class="pdd-attr-val">'+prod.color+'</span></div>';
+  var descHtml=prod.desc?'<div class="pdd-desc">'+prod.desc+'</div>':'';
+  var genderLbl=_SEASON_GENDER_LBL[prod.gender]||prod.gender||'n/d';
+  var stockHtml=prod.stock===true?'<span class="pdd-stock-ok">In stock</span>'
+    :(prod.stock===false?'<span class="pdd-stock-no">Non disponibile</span>':'n/d');
+  var metaHtml='<div class="pdd-meta-grid">'
+    +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Genere</span><span class="pdd-meta-val">'+genderLbl+'</span></div>'
+    +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Stagione</span><span class="pdd-meta-val">'+(prod.season||'n/d')+'</span></div>'
+    +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Disponibilita</span><span class="pdd-meta-val">'+stockHtml+'</span></div>'
+    +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Codice articolo</span><span class="pdd-meta-val">'+(prod.sku||'n/d')+'</span></div>'
+    +'</div>';
+  // Niente link al sito del brand: l'URL scrapato puo' non essere piu' valido (prodotto
+  // rimosso/spostato) e non abbiamo modo di verificarlo qui -- meglio ometterlo che
+  // rischiare un link rotto.
+  var imgHtml=prod.img?'<img src="'+prod.img+'" alt="'+prod.name+'">':'<div class="pdd-noimg">Nessuna immagine disponibile</div>';
+  document.getElementById('pdd-body').innerHTML=
+    '<div class="pdd-img-col">'+imgHtml+'</div>'
+    +'<div class="pdd-info-col"><div class="pdd-title">'+prod.name+'</div>'
+      +priceHtml+attrsHtml+descHtml+metaHtml
+    +'</div>';
+  document.getElementById('product-detail-overlay').classList.add('show');
+}
+function closeProductDetail(){
+  document.getElementById('product-detail-overlay').classList.remove('show');
+}
+// "+N altri" nelle liste turnover: espande la tendina rivelando i <li> oltre l'ottavo
+// (gia' nel DOM, solo nascosti), invece di limitarsi a un testo statico non interattivo.
+function toggleTurnoverMore(el){
+  var ul=el.previousElementSibling; if(!ul) return;
+  var hidden=ul.querySelectorAll('.pdd-more-hidden');
+  var isCollapsed=hidden.length>0 && hidden[0].style.display==='none';
+  hidden.forEach(function(li){ li.style.display=isCollapsed?'':'none'; });
+  el.textContent=isCollapsed?'Mostra meno':('+'+hidden.length+' altri');
+}
+// 5) Mix gender/categoria a doppia corona: anello interno = FW26, anello esterno = SS26,
+// stessi colori per la stessa fetta nelle due corone cosi' lo spostamento del mix si vede
+// a colpo d'occhio confrontando lo spessore delle due corone.
+var _SEASON_GENDER_LBL={M:'Men',F:'Women',K:'Kids',U:'Unisex'};
+// Palette alternata rosso/grigio per POSIZIONE (non per chiave fissa): due fette adiacenti
+// nello stesso anello non sono mai della stessa famiglia di colore, altrimenti (es. Men e
+// Women entrambi rossi) diventano indistinguibili una a fianco all'altra.
+var _SEASON_ALT_PALETTE=['#dd2b0f','#4a4747','#e35a3f','#a8a4a4'];
+function _seasonAltColor(i){ return _SEASON_ALT_PALETTE[i%_SEASON_ALT_PALETTE.length]; }
+function renderSeasonDonuts(bid, fw, ss){
+  ['seasoncmp-donut-gender-'+bid,'seasoncmp-donut-cat-'+bid].forEach(destroyChart);
+  var gCanvas=document.getElementById('seasoncmp-donut-gender-'+bid);
+  if(gCanvas){
+    var fwG={}, ssG={};
+    fw.forEach(function(p){ fwG[p.gender]=(fwG[p.gender]||0)+1; });
+    ss.forEach(function(p){ ssG[p.gender]=(ssG[p.gender]||0)+1; });
+    var gKeys=Object.keys(_SEASON_GENDER_LBL).filter(function(g){return fwG[g]||ssG[g];});
+    var gColors=gKeys.map(function(g,i){return _seasonAltColor(i);});
+    chartInstances['seasoncmp-donut-gender-'+bid]=new Chart(gCanvas,{
+      type:'doughnut',
+      data:{labels:gKeys.map(function(g){return _SEASON_GENDER_LBL[g];}),datasets:[
+        {label:'SS26',data:gKeys.map(function(g){return ssG[g]||0;}),backgroundColor:gColors,weight:0.6},
+        {label:'FW26',data:gKeys.map(function(g){return fwG[g]||0;}),backgroundColor:gColors}
+      ]},
+      options:{responsive:true,maintainAspectRatio:true,cutout:'40%',
+        plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10,family:'Archivo'},boxWidth:10}},
+          tooltip:{callbacks:{label:function(c){var ds=c.chart.data.datasets[c.datasetIndex];return ' '+ds.label+' '+c.label+': '+c.parsed;}}},
+          title:{display:true,text:'Gender mix (inner SS26 · outer FW26)',font:{size:10,family:'Archivo'},color:'#7d7979'}}}
+    });
+  }
+  var cCanvas=document.getElementById('seasoncmp-donut-cat-'+bid);
+  if(cCanvas){
+    var fwC={}, ssC={};
+    fw.forEach(function(p){ if(p.section) fwC[p.section]=(fwC[p.section]||0)+1; });
+    ss.forEach(function(p){ if(p.section) ssC[p.section]=(ssC[p.section]||0)+1; });
+    var SLABELS={"abbigliamento":"Apparel","scarpe":"Footwear","accessori":"Accessories","equipment":"Equipment"};
+    var cKeys=Object.keys(SLABELS).filter(function(k){return fwC[k]||ssC[k];});
+    var cColors=cKeys.map(function(k,i){return _seasonAltColor(i);});
+    chartInstances['seasoncmp-donut-cat-'+bid]=new Chart(cCanvas,{
+      type:'doughnut',
+      data:{labels:cKeys.map(function(k){return SLABELS[k];}),datasets:[
+        {label:'SS26',data:cKeys.map(function(k){return ssC[k]||0;}),backgroundColor:cColors,weight:0.6},
+        {label:'FW26',data:cKeys.map(function(k){return fwC[k]||0;}),backgroundColor:cColors}
+      ]},
+      options:{responsive:true,maintainAspectRatio:true,cutout:'40%',
+        plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10,family:'Archivo'},boxWidth:10}},
+          tooltip:{callbacks:{label:function(c){var ds=c.chart.data.datasets[c.datasetIndex];return ' '+ds.label+' '+c.label+': '+c.parsed;}}},
+          title:{display:true,text:'Category mix (inner SS26 · outer FW26)',font:{size:10,family:'Archivo'},color:'#7d7979'}}}
+    });
+  }
 }
 
 // ── PER-CHART SUMMARY (punto 4 README QA) ───────────────────────────────────
@@ -3343,6 +3710,20 @@ function renderMethodStrip(bid){
 }
 
 // ── TREEMAP (binary split, Other grouping) ────────────────────────────────
+// Colore testo tile treemap in base alla luminanza dello sfondo: nero sui grigi chiari
+// (illeggibili in bianco), un grigio scuro sugli altri (rosso/grigio scuro-medio) invece
+// del bianco puro usato prima ovunque.
+function _treemapLuminance(hex){
+  hex=String(hex||'').replace('#','');
+  if(hex.length===3) hex=hex.split('').map(function(c){return c+c;}).join('');
+  var r=parseInt(hex.substr(0,2),16)||0, g=parseInt(hex.substr(2,2),16)||0, b=parseInt(hex.substr(4,2),16)||0;
+  return (0.299*r+0.587*g+0.114*b)/255;
+}
+// Verificato via screenshot: un grigio scuro fisso sulle tile rosse/grigio scuro (bw<0.55)
+// e' quasi invisibile (basso contrasto testo-su-sfondo-scuro) -- bianco resta l'unica scelta
+// leggibile li'; nero solo sulle tile davvero chiare (grigio pallido, "Other").
+function _treemapTextColor(bg){ return _treemapLuminance(bg)>0.55?'#151414':'#fff'; }
+function _treemapSubTextColor(bg){ return _treemapLuminance(bg)>0.55?'rgba(21,20,20,.7)':'rgba(255,255,255,.7)'; }
 function renderTreemap(containerId, prods, mode, bid){
   var container=document.getElementById(containerId); if(!container) return;
   if(!mode) mode='category';
@@ -3401,19 +3782,20 @@ function renderTreemap(containerId, prods, mode, bid){
         +"display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:8px;";
       div.title=item.key+": "+item.n+" pz ("+pct+"%)"+(item.mktPct!==null?" - market: "+item.mktPct+"%":"");
       if(r.w>32&&r.h>20){
+        var _tcMain=_treemapTextColor(item.color), _tcSub=_treemapSubTextColor(item.color);
         var nm=document.createElement("div");
         var _nmSize=Math.max(11,Math.min(17,Math.round(r.h/6)));
-        nm.style.cssText="color:#fff;font-weight:800;font-family:var(--dfont);font-size:"+_nmSize+"px;letter-spacing:-.01em;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;line-height:1.1;";
+        nm.style.cssText="color:"+_tcMain+";font-weight:800;font-family:var(--dfont);font-size:"+_nmSize+"px;letter-spacing:-.01em;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;line-height:1.1;";
         nm.textContent=item.key;
         div.appendChild(nm);
         if(r.h>38){
           var pe=document.createElement("div");
-          pe.style.cssText="color:#fff;font-weight:600;font-family:var(--dfont);font-size:11px;margin-top:3px;";
+          pe.style.cssText="color:"+_tcMain+";font-weight:600;font-family:var(--dfont);font-size:11px;margin-top:3px;";
           pe.textContent=item.n+" SKU · "+pct+"% of range";
           div.appendChild(pe);
           if(item.mktPct!==null){
             var pm=document.createElement("div");
-            pm.style.cssText="color:rgba(255,255,255,.7);font-family:var(--dfont);font-size:10.5px;margin-top:1px;";
+            pm.style.cssText="color:"+_tcSub+";font-family:var(--dfont);font-size:10.5px;margin-top:1px;";
             pm.textContent="market "+item.mktPct+"%";
             div.appendChild(pm);
           }
@@ -3462,21 +3844,22 @@ function renderTreemap(containerId, prods, mode, bid){
         +"display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:8px;";
       div.title=groupLabelWithCategory(item.key)+": "+item.n+" pz ("+pct+"%)"+(item.mktPct!==null?" - market: "+item.mktPct+"%":"");
       if(r.w>32&&r.h>20){
+        var _tcMain2=_treemapTextColor(item.color), _tcSub2=_treemapSubTextColor(item.color);
         var nm=document.createElement("div");
         var _nmSize2=Math.max(11,Math.min(17,Math.round(r.h/6)));
-        nm.style.cssText="color:#fff;font-weight:800;font-family:var(--dfont);font-size:"+_nmSize2+"px;letter-spacing:-.01em;text-align:left;"
+        nm.style.cssText="color:"+_tcMain2+";font-weight:800;font-family:var(--dfont);font-size:"+_nmSize2+"px;letter-spacing:-.01em;text-align:left;"
           +"overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
           +"max-width:100%;line-height:1.1;";
         nm.textContent=cap(item.key);
         div.appendChild(nm);
         if(r.h>38){
           var pe=document.createElement("div");
-          pe.style.cssText="color:#fff;font-weight:600;font-family:var(--dfont);font-size:11px;margin-top:3px;";
+          pe.style.cssText="color:"+_tcMain2+";font-weight:600;font-family:var(--dfont);font-size:11px;margin-top:3px;";
           pe.textContent=item.n+" SKU · "+pct+"% of range";
           div.appendChild(pe);
           if(item.mktPct!==null){
             var pm=document.createElement("div");
-            pm.style.cssText="color:rgba(255,255,255,.7);font-family:var(--dfont);font-size:10.5px;margin-top:1px;";
+            pm.style.cssText="color:"+_tcSub2+";font-family:var(--dfont);font-size:10.5px;margin-top:1px;";
             pm.textContent="market "+item.mktPct+"%";
             div.appendChild(pm);
           }
@@ -3703,7 +4086,10 @@ function renderGroupGenderTable(containerId, bid){
       } else {
         html+='<td class="empty">&mdash;</td>';
       }
-      if(mN){
+      // La media di mercato ha senso solo come confronto per cio' che il brand vende
+      // davvero: se il brand non ha SKU in questo group x gender (bN=0), non mostrarla --
+      // altrimenti sembra un dato del brand quando invece e' un'opportunita' non presidiata.
+      if(bN&&mN){
         var mCtxId=_pdCtxPush({list:peerProds,filter:cellFilter,
           title:'Market (altri brand vs '+brand.name+') · '+groupLabelWithCategory(g)+' · '+ge,
           baseName:'FairPlay_market_'+_slug(brand.name)+'_'+_slug(g)+'_'+ge});
@@ -4254,21 +4640,23 @@ function drawBoxplotGrouped(canvasId,wrapId,xItems,groups,getVals,bid){
   });
 }
 function drawBox(ctx,cx,bw,st,color,ys,n){
-  // Punto 9: whisker grigio pallido (P10-P90), box Q1-Q3 fill rosa chiaro/bordo rosso brand,
-  // mediana rossa profonda a tutta larghezza. Niente pallini per singolo SKU (rimossi: creavano rumore).
+  // Whisker grigio pallido (P10-P90), box Q1-Q3 con fill/bordo/mediana derivati dal colore
+  // del gruppo (non piu' fissi rosa/rosso): con 2+ gruppi (es. FW26 rosso vs SS26 grigio) ogni
+  // box prende davvero la tinta del proprio gruppo invece di un fill rosa uguale per tutti e
+  // una mediana sempre rossa anche sui gruppi grigi. Niente pallini per singolo SKU (rimossi: creavano rumore).
   // Punto 9 README QA: cap raddoppiato (26->52) per non tagliare i box gia' raddoppiati dal chiamante.
   bw=Math.min(bw,52);
-  ctx.strokeStyle=COLOR_GREY_PALE; ctx.lineWidth=1.5;
+  ctx.strokeStyle=COLOR_GREY_PALE; ctx.lineWidth=1.25;
   ctx.beginPath();ctx.moveTo(cx,ys(st.p90));ctx.lineTo(cx,ys(st.p10));ctx.stroke();
   ctx.beginPath();ctx.moveTo(cx-bw*.28,ys(st.p10));ctx.lineTo(cx+bw*.28,ys(st.p10));ctx.stroke();
   ctx.beginPath();ctx.moveTo(cx-bw*.28,ys(st.p90));ctx.lineTo(cx+bw*.28,ys(st.p90));ctx.stroke();
   var bTop=ys(st.q3),bH=ys(st.q1)-ys(st.q3);
-  ctx.fillStyle="#ffd8d0";ctx.fillRect(cx-bw/2,bTop,bw,bH);
-  ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.strokeRect(cx-bw/2,bTop,bw,bH);
-  ctx.strokeStyle=COLOR_BRAND_DEEP; ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx-bw/2,ys(st.median));ctx.lineTo(cx+bw/2,ys(st.median));ctx.stroke();
-  // Media: linea tratteggiata piu' corta, stessa famiglia di rosso (nessun terzo colore).
+  ctx.fillStyle=color+"22";ctx.fillRect(cx-bw/2,bTop,bw,bH);
+  ctx.strokeStyle=color; ctx.lineWidth=1.25; ctx.strokeRect(cx-bw/2,bTop,bw,bH);
+  ctx.strokeStyle=color; ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-bw/2,ys(st.median));ctx.lineTo(cx+bw/2,ys(st.median));ctx.stroke();
+  // Media: linea tratteggiata piu' corta, stessa tinta del gruppo (nessun terzo colore).
   ctx.save();
-  ctx.strokeStyle=COLOR_BRAND_LIGHT; ctx.lineWidth=2; ctx.setLineDash([3,2]);
+  ctx.strokeStyle=color+"bb"; ctx.lineWidth=1.5; ctx.setLineDash([3,2]);
   ctx.beginPath();ctx.moveTo(cx-bw*.38,ys(st.mean));ctx.lineTo(cx+bw*.38,ys(st.mean));ctx.stroke();
   ctx.restore();
   // Dimensione volume: etichetta "n=X" sopra il whisker, cosi' un prezzo medio alto su
@@ -5195,24 +5583,39 @@ function renderLevelVsMarket(canvasId,level,bid,mode){
     if(mode==="tot") return typeof e.avg==="number"?e.avg:null;
     var ge=e.gender&&e.gender[mode]; return ge?ge.avg:null;
   }
-  // Punto 13/16: ordinato per gap al mercato (in valore assoluto), non per N. SKU.
-  keys.sort(function(a,b){
-    var bvA=brandVal(a),mvA=mktVal(a),bvB=brandVal(b),mvB=mktVal(b);
-    var gapA=(typeof bvA==="number"&&typeof mvA==="number")?Math.abs(bvA-mvA):-1;
-    var gapB=(typeof bvB==="number"&&typeof mvB==="number")?Math.abs(bvB-mvB):-1;
-    if(gapA!==gapB) return gapB-gapA;
-    return (brandMap[b].n||0)-(brandMap[a].n||0);
+  if(level==='specific'){
+    // Punto 6: livello "specific" ordinato per N. SKU decrescente (non per gap al mercato)
+    // -- i tipi di prodotto piu' rilevanti per il brand vanno letti per primi.
+    keys.sort(function(a,b){ return ((brandMap[b]&&brandMap[b].n)||0)-((brandMap[a]&&brandMap[a].n)||0); });
+  } else {
+    // Punto 13/16: ordinato per gap al mercato (in valore assoluto), non per N. SKU.
+    keys.sort(function(a,b){
+      var bvA=brandVal(a),mvA=mktVal(a),bvB=brandVal(b),mvB=mktVal(b);
+      var gapA=(typeof bvA==="number"&&typeof mvA==="number")?Math.abs(bvA-mvA):-1;
+      var gapB=(typeof bvB==="number"&&typeof mvB==="number")?Math.abs(bvB-mvB):-1;
+      if(gapA!==gapB) return gapB-gapA;
+      return (brandMap[b].n||0)-(brandMap[a].n||0);
+    });
+  }
+  // Punto 6: al livello "specific" il numero di SKU va scritto a sinistra dell'etichetta
+  // (serve a leggere subito il peso della riga, dato che qui l'ordine e' per N. SKU).
+  var labels=keys.map(function(k){
+    var lbl=cfg.labelFn(k);
+    if(level!=='specific') return lbl;
+    var n=(brandMap[k]&&brandMap[k].n)||0;
+    return n+' · '+lbl;
   });
-  var labels=keys.map(cfg.labelFn);
   var brandData=keys.map(brandVal);
   var mktData=keys.map(mktVal);
   // Dimensione volume (idea 3): senza un segnale di peso, uno scostamento di prezzo su
   // 3 SKU si legge come equivalente a uno su 300. Sotto la soglia di mix, le barre di
   // QUELLA riga (brand e mercato) diventano piu' sbiadite -- nessun testo/elemento in
-  // piu', solo un'opacita' ridotta che segnala "dato debole".
+  // piu', solo un'opacita' ridotta che segnala "dato debole". Punto 6: non al livello
+  // "specific", dove il numero di SKU e' gia' scritto esplicitamente in etichetta.
   var _LOW_MIX_THRESHOLD=0.05;
   var _totalBrandN=keys.reduce(function(s,k){return s+((brandMap[k]&&brandMap[k].n)||0);},0);
   var _lowMix=keys.map(function(k){
+    if(level==='specific') return false;
     var n=(brandMap[k]&&brandMap[k].n)||0;
     return _totalBrandN>0 ? (n/_totalBrandN)<_LOW_MIX_THRESHOLD : false;
   });
@@ -5693,35 +6096,62 @@ function setAllMarketBrands(show){
 // di escludere singoli brand dall'equazione. "Apply filters" ricalcola tutto;
 // i chip (non i campi prezzo) si applicano subito al click.
 function _finderAllProducts(){
+  // Product Benchmarking mostra solo FW26 -- RAW_DATA per un brand puo' contenere
+  // anche SS26 se altrove nella sessione e' stato aperto un confronto stagionale
+  // per quel brand (i dati vengono concatenati li'), quindi va filtrato qui.
   var out=[];
   for(var i=0;i<BRANDS.length;i++){
     var pp=RAW_DATA[BRANDS[i].id]||[];
-    for(var j=0;j<pp.length;j++) if(pp[j].price>0) out.push({p:pp[j], brand:BRANDS[i]});
+    for(var j=0;j<pp.length;j++) if(pp[j].price>0 && pp[j].season==='FW26') out.push({p:pp[j], brand:BRANDS[i]});
   }
   return out;
 }
-// Pool filtrato da genere/tassonomia/prezzo, ESCLUSO il filtro brand -- serve
-// sia per calcolare le liste a cascata (group/specific) sia per sapere quali
-// brand mostrare nella checklist (indipendentemente da quali sono esclusi).
-function _finderTaxonomyPool(){
+// Filtro "faceted": vero se il prodotto rispetta tutti i filtri ATTIVI tranne
+// quello indicato in skipDim (e, se includeBrand, anche il filtro brand).
+// E' la base per rendere ogni sezione della sidebar dinamica rispetto a
+// TUTTE le altre: scelto un brand, spariscono i colori/categorie che quel
+// brand non copre; scelta una categoria, spariscono i brand/colori che non
+// la coprono -- ognuno guarda gli altri, mai se stesso.
+function _finderPassesExcept(p, skipDim){
   var priceMinEl=document.getElementById('finder-price-min'), priceMaxEl=document.getElementById('finder-price-max');
   var priceMin=priceMinEl&&priceMinEl.value!==''?parseFloat(priceMinEl.value):null;
   var priceMax=priceMaxEl&&priceMaxEl.value!==''?parseFloat(priceMaxEl.value):null;
-  return _finderAllProducts().filter(function(r){
-    var p=r.p;
-    if(finderGenders.length>0&&finderGenders.indexOf(p.gender)<0) return false;
-    if(finderCatsL1.length>0&&finderCatsL1.indexOf(p.cat)<0) return false;
-    if(finderCategories.length>0&&finderCategories.indexOf(p.category)<0) return false;
-    if(finderSpecifics.length>0&&finderSpecifics.indexOf(p.spec)<0) return false;
+  if(skipDim!=='gender'   && finderGenders.length>0    && finderGenders.indexOf(p.gender)<0)     return false;
+  if(skipDim!=='catL1'    && finderCatsL1.length>0     && finderCatsL1.indexOf(p.cat)<0)          return false;
+  if(skipDim!=='group'    && finderCategories.length>0 && finderCategories.indexOf(p.category)<0) return false;
+  if(skipDim!=='specific' && finderSpecifics.length>0  && finderSpecifics.indexOf(p.spec)<0)      return false;
+  if(skipDim!=='color'    && finderColors.length>0     && finderColors.indexOf(p.color)<0)        return false;
+  if(skipDim!=='price'){
     if(priceMin!==null&&p.price<priceMin) return false;
     if(priceMax!==null&&p.price>priceMax) return false;
-    return true;
+  }
+  return true;
+}
+// includeBrand=true applica anche l'esclusione brand corrente (usato per i
+// chip di tassonomia: un brand escluso non deve contribuire ai loro conteggi);
+// includeBrand=false la ignora (usato per calcolare la checklist brand stessa,
+// che deve restare completa anche quando alcuni brand sono spuntati via).
+function _finderPoolExcept(skipDim, includeBrand){
+  return _finderAllProducts().filter(function(r){
+    if(includeBrand && finderExcludedBrands.indexOf(r.brand.id)>=0) return false;
+    return _finderPassesExcept(r.p, skipDim);
   });
 }
+// Retro-compatibilita': pool con TUTTI i filtri tassonomia/prezzo applicati,
+// esclusione brand ESCLUSA -- usato per la checklist brand e per i risultati
+// finali (che poi tolgono loro stessi i brand esclusi).
+function _finderTaxonomyPool(){ return _finderPoolExcept(null, false); }
 function _countBy(list, keyFn){
   var counts={};
   list.forEach(function(r){ var k=keyFn(r.p); if(k) counts[k]=(counts[k]||0)+1; });
   return counts;
+}
+function _searchFilterCounts(counts, inputId){
+  var q=(document.getElementById(inputId)||{}).value||'';
+  if(!q) return counts;
+  var out={};
+  Object.keys(counts).forEach(function(k){ if(k.toLowerCase().indexOf(q.toLowerCase())>=0) out[k]=counts[k]; });
+  return out;
 }
 function _renderChipList(wrapId, counts, selected, toggleFn, emptyMsg){
   var wrap=document.getElementById(wrapId); if(!wrap) return;
@@ -5732,38 +6162,33 @@ function _renderChipList(wrapId, counts, selected, toggleFn, emptyMsg){
   }).join('')||'<span style="color:#aaa;font-size:.8rem">'+emptyMsg+'</span>';
 }
 function _rebuildFinderChips(){
-  // Category (L1): sempre su TUTTO il pool genere/prezzo, non a cascata da se' stesso.
-  var l1Pool=_finderAllProducts().filter(function(r){
-    if(finderGenders.length>0&&finderGenders.indexOf(r.p.gender)<0) return false;
-    return true;
+  var genderPool=_finderPoolExcept('gender',true);
+  var genderCounts=_countBy(genderPool, function(p){return p.gender;});
+  ['M','F','K','U'].forEach(function(v){
+    var el=document.getElementById('fgc-'+v); if(!el) return;
+    var n=genderCounts[v]||0;
+    el.className='finder-chip'+(finderGenders.indexOf(v)>=0?' active':'')+(n===0?' finder-chip-empty':'');
   });
+
+  var l1Pool=_finderPoolExcept('catL1',true);
+  finderCatsL1=finderCatsL1.filter(function(c){return l1Pool.some(function(r){return r.p.cat===c;});});
   _renderChipList('finder-catl1-wrap', _countBy(l1Pool, function(p){return p.cat;}), finderCatsL1, 'toggleFinderCatL1', 'No categories found');
 
-  // Product group: a cascata da Category(L1) selezionata (se presente).
-  var grpPool=_finderAllProducts().filter(function(r){
-    var p=r.p;
-    if(finderGenders.length>0&&finderGenders.indexOf(p.gender)<0) return false;
-    if(finderCatsL1.length>0&&finderCatsL1.indexOf(p.cat)<0) return false;
-    return true;
-  });
+  var grpPool=_finderPoolExcept('group',true);
   finderCategories=finderCategories.filter(function(c){return grpPool.some(function(r){return r.p.category===c;});});
-  var grpCounts=_countBy(grpPool, function(p){return p.category;});
-  var q=(document.getElementById('finder-cat-search')||{}).value||'';
-  var filteredGrpCounts=q?Object.fromEntries(Object.entries(grpCounts).filter(function(e){return e[0].toLowerCase().indexOf(q.toLowerCase())>=0;})):grpCounts;
-  _renderChipList('finder-cat-wrap', filteredGrpCounts, finderCategories, 'toggleFinderCat', 'No groups found');
+  _renderChipList('finder-cat-wrap', _searchFilterCounts(_countBy(grpPool, function(p){return p.category;}),'finder-cat-search'), finderCategories, 'toggleFinderCat', 'No groups found');
 
-  // Specific type: a cascata da Category(L1) + Product group selezionati.
-  var specPool=grpPool.filter(function(r){
-    return finderCategories.length===0||finderCategories.indexOf(r.p.category)>=0;
-  });
+  var specPool=_finderPoolExcept('specific',true);
   finderSpecifics=finderSpecifics.filter(function(s){return specPool.some(function(r){return r.p.spec===s;});});
-  var specCounts=_countBy(specPool, function(p){return p.spec;});
-  var q2=(document.getElementById('finder-spec-search')||{}).value||'';
-  var filteredSpecCounts=q2?Object.fromEntries(Object.entries(specCounts).filter(function(e){return e[0].toLowerCase().indexOf(q2.toLowerCase())>=0;})):specCounts;
-  _renderChipList('finder-spec-wrap', filteredSpecCounts, finderSpecifics, 'toggleFinderSpecific', 'No specific types found');
+  _renderChipList('finder-spec-wrap', _searchFilterCounts(_countBy(specPool, function(p){return p.spec;}),'finder-spec-search'), finderSpecifics, 'toggleFinderSpecific', 'No specific types found');
+
+  var colorPool=_finderPoolExcept('color',true);
+  finderColors=finderColors.filter(function(c){return colorPool.some(function(r){return r.p.color===c;});});
+  _renderChipList('finder-color-wrap', _searchFilterCounts(_countBy(colorPool, function(p){return p.color;}),'finder-color-search'), finderColors, 'toggleFinderColor', 'No colors found');
 }
 function filterFinderCats(q){ _rebuildFinderChips(); }
 function filterFinderSpecifics(q){ _rebuildFinderChips(); }
+function filterFinderColors(q){ _rebuildFinderChips(); }
 function toggleFinderGender(g){
   var idx=finderGenders.indexOf(g);
   if(idx>=0) finderGenders.splice(idx,1); else finderGenders.push(g);
@@ -5786,6 +6211,11 @@ function toggleFinderCat(cat){
 function toggleFinderSpecific(spec){
   var idx=finderSpecifics.indexOf(spec);
   if(idx>=0) finderSpecifics.splice(idx,1); else finderSpecifics.push(spec);
+  applyFinderFilters();
+}
+function toggleFinderColor(color){
+  var idx=finderColors.indexOf(color);
+  if(idx>=0) finderColors.splice(idx,1); else finderColors.push(color);
   applyFinderFilters();
 }
 // ── Brand checklist: quali brand contano nel pool attuale, con possibilita'
@@ -5821,9 +6251,10 @@ function _finderBrandAll(include){
 }
 function goToFinder(){
   ensureAllBrandsLoaded(function(){
-    finderGenders=[]; finderCatsL1=[]; finderCategories=[]; finderSpecifics=[]; finderExcludedBrands=[];
+    finderGenders=[]; finderCatsL1=[]; finderCategories=[]; finderSpecifics=[]; finderColors=[]; finderExcludedBrands=[];
     document.getElementById('finder-cat-search').value='';
     document.getElementById('finder-spec-search').value='';
+    document.getElementById('finder-color-search').value='';
     document.getElementById('finder-price-min').value='';
     document.getElementById('finder-price-max').value='';
     document.querySelectorAll('#finder-gender-row .finder-chip').forEach(function(c){ c.className='finder-chip'; });
@@ -5857,7 +6288,8 @@ function renderFinderResults(){
     var p=r.p;
     var priceHtml='€'+Math.round(p.price)
       +(p.price_std&&p.price_std>p.price?' <span class="fpc-price-old">€'+Math.round(p.price_std)+'</span>':'');
-    return '<div class="finder-product-card">'
+    var pddIdx=_pddProducts.length; _pddProducts.push(p);
+    return '<div class="finder-product-card" onclick="openProductDetail('+pddIdx+')">'
       +'<div class="fpc-img">'+(p.img?'<img src="'+p.img+'" loading="lazy" onerror="this.parentElement.classList.add(\'fpc-img-empty\')">':'')+'</div>'
       +'<div class="fpc-brand">'+r.brand.name+'</div>'
       +'<div class="fpc-name">'+(p.name||'')+'</div>'
@@ -5881,10 +6313,10 @@ function sortFinderResults(){
 function downloadFinderCatalog(){
   if(!finderResults.length){ alert('Nessun prodotto da esportare con i filtri attuali.'); return; }
   if(!window.JSZip){ alert('Libreria ZIP non disponibile, verifica la connessione internet.'); return; }
-  var aoa=[["Brand","Product name","Price current","Price standard","Category","Product group","Specific type","Gender"]];
+  var aoa=[["Brand","Product name","Price current","Price standard","Category","Product group","Specific type","Color","Gender"]];
   finderResults.forEach(function(r){
     var p=r.p;
-    aoa.push([r.brand.name, p.name||'', p.price||'', p.price_std||'', p.cat||'', p.category||'', p.spec||'', _GENDER_LBL_EN[p.gender]||p.gender||'']);
+    aoa.push([r.brand.name, p.name||'', p.price||'', p.price_std||'', p.cat||'', p.category||'', p.spec||'', p.color||'', _GENDER_LBL_EN[p.gender]||p.gender||'']);
   });
   var ws=XLSX.utils.aoa_to_sheet(aoa);
   var wb=XLSX.utils.book_new();
