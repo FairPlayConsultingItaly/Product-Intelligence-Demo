@@ -5788,6 +5788,13 @@ var CATEGORY_GROUPS = {
   accessori: {label:"Accessories", groups:["Backpacks & Trekking Bags","Hats, Beanies & Visors","Gloves","Technical Socks","Eyewear","Gaiters","Belts","Care Products"]},
   equipment: {label:"Equipment", groups:["Climbing & Mountaineering Gear","Avalanche Safety","Camping & Bivouac","Skiing & Snowboarding Gear","Trekking Poles","Hydration & Trekking Kitchen"]}
 };
+// Elenco piatto di tutti i "group" (livello medio, es. "Vests") su tutte le
+// sezioni -- usato per popolare la tendina categoria di Market Overview.
+function getAllCats(){
+  var out=[];
+  Object.keys(CATEGORY_GROUPS).forEach(function(s){ out=out.concat(CATEGORY_GROUPS[s].groups); });
+  return out;
+}
 function _countByGroup(prods, groups){
   var counts={}; groups.forEach(function(g){counts[g]=0;});
   prods.forEach(function(p){ var g=GROUP_ALIASES[p.category]||p.category; if(g!==undefined && counts[g]!==undefined) counts[g]++; });
