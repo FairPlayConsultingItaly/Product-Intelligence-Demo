@@ -3288,10 +3288,6 @@ function openProductDetail(idx){
   bc.innerHTML=crumbs.join('');
   var priceHtml='<div class="pdd-price-row"><span class="pdd-price">'
     +(typeof prod.price==='number'?'&euro;'+prod.price.toFixed(2).replace('.',','):'n/d')+'</span>';
-  if(typeof prod.price_std==='number' && prod.price_std>prod.price){
-    priceHtml+='<span class="pdd-price-std">&euro;'+prod.price_std.toFixed(2).replace('.',',')+'</span>';
-    if(prod.disc) priceHtml+='<span class="pdd-disc-badge">-'+prod.disc+'%</span>';
-  }
   priceHtml+='</div>';
   var attrsHtml='';
   if(prod.color) attrsHtml+='<div class="pdd-attr-row"><span class="pdd-attr-label">Colore</span><span class="pdd-attr-val">'+prod.color+'</span></div>';
@@ -6286,8 +6282,7 @@ function renderFinderResults(){
   var shown=finderResults.slice(0,300);
   grid.innerHTML=shown.map(function(r){
     var p=r.p;
-    var priceHtml='€'+Math.round(p.price)
-      +(p.price_std&&p.price_std>p.price?' <span class="fpc-price-old">€'+Math.round(p.price_std)+'</span>':'');
+    var priceHtml='€'+Math.round(p.price);
     var pddIdx=_pddProducts.length; _pddProducts.push(p);
     return '<div class="finder-product-card" onclick="openProductDetail('+pddIdx+')">'
       +'<div class="fpc-img">'+(p.img?'<img src="'+p.img+'" loading="lazy" onerror="this.parentElement.classList.add(\'fpc-img-empty\')">':'')+'</div>'
