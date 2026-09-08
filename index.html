@@ -2872,8 +2872,19 @@ function renderBrandCard(bid){
 // ── KPI CARDS ─────────────────────────────────────────────────────────────
 // Prodotti dei brand PEER (Company_list.xlsx) con gli stessi filtri toolbar
 // attivi (gender/section/category/season) applicati al brand selezionato.
+// Tagga ogni prodotto col nome del brand di provenienza (p._brandName) prima di
+// appiattire il pool multi-brand -- altrimenti si perde nel .concat() e il
+// drilldown (openProductDrilldown) non puo' piu' mostrare da quale brand viene
+// ogni riga. Mutazione idempotente sull'oggetto condiviso di RAW_DATA[pid] (il
+// brand di un prodotto non cambia mai), sicura da riusare in altri contesti.
+function _taggedFiltered(pid){
+  var prods=getFiltered(pid);
+  var bname=(getBrand(pid)||{name:pid}).name;
+  prods.forEach(function(p){ if(!p._brandName) p._brandName=bname; });
+  return prods;
+}
 function getPeerProducts(bid){
-  return getPeerIds(bid).reduce(function(acc,pid){ return acc.concat(getFiltered(pid)); }, []);
+  return getPeerIds(bid).reduce(function(acc,pid){ return acc.concat(_taggedFiltered(pid)); }, []);
 }
 // Istruzione B (coordinatore): selettore brand locale al pannello "Group price & mix"
 // (sec03) per scegliere quali brand contano nella media di mercato mostrata LI'.
@@ -2883,7 +2894,7 @@ var _sec03MarketBrandFilter=[];
 function getSec03PeerProducts(bid){
   if(!_sec03MarketBrandFilter.length) return getPeerProducts(bid);
   return _sec03MarketBrandFilter.filter(function(id){return id!==bid;})
-    .reduce(function(acc,pid){ return acc.concat(getFiltered(pid)); }, []);
+    .reduce(function(acc,pid){ return acc.concat(_taggedFiltered(pid)); }, []);
 }
 // Carica solo i brand richiesti (se non gia' in RAW_DATA) e poi richiama callback --
 // come ensureAllBrandsLoaded() ma mirato, per non dover scaricare tutti i 20 brand solo
@@ -3245,17 +3256,18 @@ function renderSeasonKpiTable(containerId, fw, ss){
     +'<table class="gg-table"><thead><tr><th class="row-hdr">Group</th><th>SS26<br>N.SKU</th><th>FW26<br>N.SKU</th><th>&Delta;</th>'
     +'<th>SS26<br>Avg &euro;</th><th>FW26<br>Avg &euro;</th><th>&Delta;</th><th>SS26<br>Core range</th><th>FW26<br>Core range</th></tr></thead><tbody>'+groupRowsHtml+'</tbody></table>';
 }
-// 4) Turnover: modelli nuovi in SS26 (assenti in FW26) e usciti di listino (in FW26, non
-// piu' in SS26) -- riconciliati per nome prodotto (piu' stabile dello SKU, che spesso
-// cambia a ogni stagione anche per lo stesso modello/colore).
+// 4) Turnover: modelli nuovi in FW26 (assenti in SS26) e usciti di listino (in SS26, non
+// piu' in FW26) -- riconciliati per nome prodotto (piu' stabile dello SKU, che spesso
+// cambia a ogni stagione anche per lo stesso modello/colore). SS26 = stagione precedente,
+// FW26 = stagione corrente (stessa convenzione di _seasonDeltaHtml).
 var _pddProducts=[]; // lookup per gli <li> cliccabili: indice -> oggetto prodotto (vedi openProductDetail)
 function renderSeasonTurnover(containerId, fw, ss){
   var container=document.getElementById(containerId); if(!container) return;
   var fwByName={}, ssByName={};
   fw.forEach(function(p){ if(p.name && !fwByName[p.name]) fwByName[p.name]=p; });
   ss.forEach(function(p){ if(p.name && !ssByName[p.name]) ssByName[p.name]=p; });
-  var discontinued=Object.keys(fwByName).filter(function(n){return !ssByName[n];}).sort();
-  var added=Object.keys(ssByName).filter(function(n){return !fwByName[n];}).sort();
+  var added=Object.keys(fwByName).filter(function(n){return !ssByName[n];}).sort();
+  var discontinued=Object.keys(ssByName).filter(function(n){return !fwByName[n];}).sort();
   var unchanged=Object.keys(fwByName).filter(function(n){return ssByName[n];}).sort();
   function itemHtml(prod,hideIt){
     var idx=_pddProducts.length; _pddProducts.push(prod);
@@ -3272,9 +3284,9 @@ function renderSeasonTurnover(containerId, fw, ss){
       +'</div>';
   }
   container.innerHTML='<div style="display:flex;gap:24px;flex-wrap:wrap">'
-    +listHtml(added,ssByName,'New in SS26 (not in FW26)','#1a9c4a')
+    +listHtml(added,fwByName,'New in FW26 (not in SS26)','#1a9c4a')
     +listHtml(unchanged,fwByName,'Carried over (in both seasons)','#7d7979')
-    +listHtml(discontinued,fwByName,'Discontinued (FW26 only)','#cc2222')
+    +listHtml(discontinued,ssByName,'Discontinued (SS26 only)','#cc2222')
     +'</div>';
 }
 // Scheda prodotto (overlay): aperta cliccando un nome nella lista turnover. Mostra solo i
@@ -4334,9 +4346,14 @@ function openProductDrilldown(ctxId){
   if(!cellProds.length){
     body.innerHTML='<div class="pd-empty">Nessun prodotto in questa cella.</div>';
   } else {
+    // Colonna Brand solo se la lista e' un pool multi-brand (es. Group price & mix
+    // sulla percentuale di mercato) -- taggata da _taggedFiltered/getPeerProducts.
+    // Assente/omessa quando il contesto e' gia' un singolo brand (nessun p._brandName).
+    var hasBrand=cellProds.some(function(p){return p._brandName;});
     var rowsHtml=cellProds.map(function(p){
       return '<tr>'
         +'<td>'+(p.img?'<img class="pd-thumb" src="'+p.img+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">':'')+'</td>'
+        +(hasBrand?'<td>'+(p._brandName||'')+'</td>':'')
         +'<td>'+(p.sku||'')+'</td>'
         +'<td>'+(p.name||'')+'</td>'
         +'<td>'+(p.price?'&euro;'+p.price:'')+'</td>'
@@ -4349,7 +4366,7 @@ function openProductDrilldown(ctxId){
         +'</tr>';
     }).join('');
     body.innerHTML='<div class="pd-table-wrap"><table class="pd-table"><tr>'
-      +'<th></th><th>SKU</th><th>Product name</th><th>Price current</th><th>Price standard</th><th>Discount %</th>'
+      +'<th></th>'+(hasBrand?'<th>Brand</th>':'')+'<th>SKU</th><th>Product name</th><th>Price current</th><th>Price standard</th><th>Discount %</th>'
       +'<th>Description</th><th>Category</th><th>Product group</th><th>Gender</th>'
       +'</tr>'+rowsHtml+'</table></div>';
   }
@@ -4365,9 +4382,10 @@ function downloadProductDrilldownZip(){
   var cellProds=ctx.list.filter(ctx.filter);
   if(!cellProds.length){ alert('Nessun prodotto da esportare.'); return; }
 
-  var aoa=[["SKU","Product name","Price current","Price standard","Discount %","Description","Category","Product group","Gender"]];
+  var hasBrand=cellProds.some(function(p){return p._brandName;});
+  var aoa=[(hasBrand?["Brand"]:[]).concat(["SKU","Product name","Price current","Price standard","Discount %","Description","Category","Product group","Gender"])];
   cellProds.forEach(function(p){
-    aoa.push([p.sku||'', p.name||'', p.price||'', p.price_std||'', p.disc||'', p.desc||'', p.cat||'', p.category||'', _GENDER_LBL_EN[p.gender]||p.gender||'']);
+    aoa.push((hasBrand?[p._brandName||'']:[]).concat([p.sku||'', p.name||'', p.price||'', p.price_std||'', p.disc||'', p.desc||'', p.cat||'', p.category||'', _GENDER_LBL_EN[p.gender]||p.gender||'']));
   });
   var ws=XLSX.utils.aoa_to_sheet(aoa);
   var wb=XLSX.utils.book_new();
