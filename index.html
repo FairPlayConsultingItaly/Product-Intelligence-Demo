@@ -576,9 +576,25 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 .finder-section-label{font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
 .finder-chip{border:1.5px solid var(--border);border-radius:99px;padding:5px 13px;font-size:.82rem;font-weight:600;cursor:pointer;background:#fff;color:var(--muted);transition:all .15s;user-select:none;white-space:nowrap}
 .finder-chip.active{background:var(--gray-dark);border-color:var(--gray-dark);color:#fff}
-.finder-chip-empty{opacity:.35}
-.finder-chip-empty:not(.active){color:#ccc}
-.finder-cat-wrap{max-height:120px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:5px;padding:2px}
+/* Menu a comparsa (accordion): intestazione + freccia, click per aprire una
+   colonna di rettangoli pieni attaccati (niente pillole affiancate) --
+   stessa resa per Genere/Categoria/Gruppo/Tipo/Colore primario/secondario. */
+.finder-accordion{border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
+.finder-accordion-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;user-select:none;background:#fff}
+.finder-accordion-head:hover{background:#fafafa}
+.finder-accordion-head .finder-section-label{margin-bottom:0}
+.finder-accordion-arrow{font-size:.65rem;color:#999;transition:transform .15s;flex:none;margin-left:8px}
+.finder-accordion.open .finder-accordion-arrow{transform:rotate(180deg)}
+.finder-accordion-body{display:none}
+.finder-accordion.open .finder-accordion-body{display:block}
+.finder-cat-wrap{max-height:220px;overflow-y:auto;border-top:1.5px solid var(--border)}
+.finder-opt{padding:9px 12px;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;background:#fff;border-bottom:1px solid var(--border);transition:background .12s}
+.finder-opt:last-child{border-bottom:none}
+.finder-opt:hover{background:#fafafa}
+.finder-opt.active{background:var(--gray-dark);color:#fff}
+.finder-opt-empty{opacity:.35}
+.finder-opt-empty:not(.active){color:#ccc}
+.finder-opt-empty-msg{padding:10px 12px;color:#aaa;font-size:.8rem;display:block}
 .finder-search-input{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;font-size:.86rem;font-family:Arial;outline:none;margin-bottom:8px;color:var(--text)}
 .finder-search-input:focus{border-color:#888}
 .finder-price-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
@@ -1174,54 +1190,93 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 <div id="screen-finder-results" class="screen dest-bg-montagna">
   <div class="finder-results-header">
     <button class="btn-back" onclick="goToModeSelect()">&#8592; Home</button>
-    <span class="finder-results-count" id="finder-count">0 products found</span>
+    <span class="finder-results-count" id="finder-count">0 prodotti trovati</span>
     <div class="finder-sort-wrap">
-      <span>Sort:</span>
+      <span>Ordina:</span>
       <select class="filter-select" id="finder-sort" onchange="sortFinderResults()">
-        <option value="relevance">Relevance</option>
-        <option value="price-asc">Price &#8593;</option>
-        <option value="price-desc">Price &#8595;</option>
+        <option value="relevance">Rilevanza</option>
+        <option value="price-asc">Prezzo &#8593;</option>
+        <option value="price-desc">Prezzo &#8595;</option>
         <option value="alpha">Brand A-Z</option>
       </select>
     </div>
-    <button class="btn btn-ghost finder-download-btn" onclick="downloadFinderCatalog()">&#8681; Download catalog</button>
+    <button class="btn btn-ghost finder-download-btn" onclick="downloadFinderCatalog()">&#8681; Scarica catalogo</button>
   </div>
   <div class="finder-layout">
     <aside class="finder-sidebar" id="finder-sidebar">
       <div class="finder-section">
-        <div class="di-hint">Product Benchmarking is available for FW26 products only.</div>
+        <div class="di-hint">Il Product Benchmarking è disponibile solo per i prodotti FW26.</div>
       </div>
       <div class="finder-section">
-        <div class="finder-section-label">Gender</div>
-        <div class="chip-row" id="finder-gender-row">
-          <div class="finder-chip" id="fgc-M" onclick="toggleFinderGender('M')">&#9794; Men</div>
-          <div class="finder-chip" id="fgc-F" onclick="toggleFinderGender('F')">&#9792; Women</div>
-          <div class="finder-chip" id="fgc-K" onclick="toggleFinderGender('K')">Kids</div>
-          <div class="finder-chip" id="fgc-U" onclick="toggleFinderGender('U')">Unisex</div>
+        <div class="finder-accordion" id="acc-gender">
+          <div class="finder-accordion-head" onclick="toggleFinderAccordion('gender')">
+            <span class="finder-section-label">Genere</span>
+            <span class="finder-accordion-arrow">&#9660;</span>
+          </div>
+          <div class="finder-cat-wrap finder-accordion-body" id="finder-gender-row">
+            <div class="finder-opt" id="fgc-M" onclick="toggleFinderGender('M')">&#9794; Uomo</div>
+            <div class="finder-opt" id="fgc-F" onclick="toggleFinderGender('F')">&#9792; Donna</div>
+            <div class="finder-opt" id="fgc-K" onclick="toggleFinderGender('K')">Bambini</div>
+            <div class="finder-opt" id="fgc-U" onclick="toggleFinderGender('U')">Unisex</div>
+          </div>
         </div>
       </div>
       <div class="finder-section">
-        <div class="finder-section-label">Category</div>
-        <div class="finder-cat-wrap" id="finder-catl1-wrap"></div>
+        <div class="finder-accordion" id="acc-catl1">
+          <div class="finder-accordion-head" onclick="toggleFinderAccordion('catl1')">
+            <span class="finder-section-label">Categoria</span>
+            <span class="finder-accordion-arrow">&#9660;</span>
+          </div>
+          <div class="finder-cat-wrap finder-accordion-body" id="finder-catl1-wrap"></div>
+        </div>
       </div>
       <div class="finder-section">
-        <div class="finder-section-label">Product group</div>
-        <input type="text" class="finder-search-input" id="finder-cat-search" placeholder="Search product group..." oninput="filterFinderCats(this.value)" autocomplete="off">
-        <div class="finder-cat-wrap" id="finder-cat-wrap"></div>
+        <div class="finder-accordion" id="acc-group">
+          <div class="finder-accordion-head" onclick="toggleFinderAccordion('group')">
+            <span class="finder-section-label">Gruppo prodotto</span>
+            <span class="finder-accordion-arrow">&#9660;</span>
+          </div>
+          <div class="finder-accordion-body">
+            <input type="text" class="finder-search-input" id="finder-cat-search" placeholder="Cerca gruppo prodotto..." oninput="filterFinderCats(this.value)" autocomplete="off">
+            <div class="finder-cat-wrap" id="finder-cat-wrap"></div>
+          </div>
+        </div>
       </div>
       <div class="finder-section">
-        <div class="finder-section-label">Specific type</div>
-        <input type="text" class="finder-search-input" id="finder-spec-search" placeholder="Search specific type..." oninput="filterFinderSpecifics(this.value)" autocomplete="off">
-        <div class="finder-cat-wrap" id="finder-spec-wrap"></div>
+        <div class="finder-accordion" id="acc-specific">
+          <div class="finder-accordion-head" onclick="toggleFinderAccordion('specific')">
+            <span class="finder-section-label">Tipo specifico</span>
+            <span class="finder-accordion-arrow">&#9660;</span>
+          </div>
+          <div class="finder-accordion-body">
+            <input type="text" class="finder-search-input" id="finder-spec-search" placeholder="Cerca tipo specifico..." oninput="filterFinderSpecifics(this.value)" autocomplete="off">
+            <div class="finder-cat-wrap" id="finder-spec-wrap"></div>
+          </div>
+        </div>
       </div>
       <div class="finder-section">
-        <div class="finder-section-label">Color</div>
-        <div class="di-hint">Color data not available for: Salomon, Columbia, Grisport (site restrictions).</div>
-        <input type="text" class="finder-search-input" id="finder-color-search" placeholder="Search color..." oninput="filterFinderColors(this.value)" autocomplete="off">
-        <div class="finder-cat-wrap" id="finder-color-wrap"></div>
+        <div class="di-hint">Colore non disponibile per: Salomon, Columbia, Grisport (restrizioni del sito).</div>
       </div>
       <div class="finder-section">
-        <div class="finder-section-label">Price range (&euro;)</div>
+        <div class="finder-accordion" id="acc-colorPrimary">
+          <div class="finder-accordion-head" onclick="toggleFinderAccordion('colorPrimary')">
+            <span class="finder-section-label">Colore primario</span>
+            <span class="finder-accordion-arrow">&#9660;</span>
+          </div>
+          <div class="finder-cat-wrap finder-accordion-body" id="finder-color-primary-wrap"></div>
+        </div>
+      </div>
+      <div class="finder-section">
+        <div class="finder-accordion" id="acc-colorSecondary">
+          <div class="finder-accordion-head" onclick="toggleFinderAccordion('colorSecondary')">
+            <span class="finder-section-label">Colore secondario</span>
+            <span class="finder-accordion-arrow">&#9660;</span>
+          </div>
+          <div class="finder-cat-wrap finder-accordion-body" id="finder-color-secondary-wrap"></div>
+        </div>
+      </div>
+      <div class="finder-section">
+        <div class="finder-section-label">Fascia di prezzo (&euro;)</div>
         <div class="finder-price-row">
           <input type="number" class="finder-price-input" id="finder-price-min" placeholder="Min &euro;">
           <span style="color:#bbb">&#8212;</span>
@@ -1229,14 +1284,14 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
         </div>
       </div>
       <div class="finder-section">
-        <div class="finder-section-label">Brands</div>
+        <div class="finder-section-label">Brand</div>
         <div class="finder-brand-actions">
-          <button class="bp-filter-btn" onclick="_finderBrandAll(true)">All</button>
-          <button class="bp-filter-btn" onclick="_finderBrandAll(false)">None</button>
+          <button class="bp-filter-btn" onclick="_finderBrandAll(true)">Tutti</button>
+          <button class="bp-filter-btn" onclick="_finderBrandAll(false)">Nessuno</button>
         </div>
         <div class="finder-brand-checklist" id="finder-brand-checklist"></div>
       </div>
-      <button class="btn btn-primary finder-apply-btn" onclick="applyFinderFilters()">Apply filters</button>
+      <button class="btn btn-primary finder-apply-btn" onclick="applyFinderFilters()">Applica filtri</button>
     </aside>
     <div class="finder-product-grid" id="finder-brand-grid"></div>
   </div>
@@ -1623,7 +1678,8 @@ var finderGenders = [];
 var finderCatsL1 = [];
 var finderCategories = [];
 var finderSpecifics = [];
-var finderColors = [];
+var finderColorsPrimary = [];
+var finderColorsSecondary = [];
 var finderExcludedBrands = [];
 var finderResults = [];
 var _allCats = null;
@@ -6144,7 +6200,8 @@ function _finderPassesExcept(p, skipDim){
   if(skipDim!=='catL1'    && finderCatsL1.length>0     && finderCatsL1.indexOf(p.cat)<0)          return false;
   if(skipDim!=='group'    && finderCategories.length>0 && finderCategories.indexOf(p.category)<0) return false;
   if(skipDim!=='specific' && finderSpecifics.length>0  && finderSpecifics.indexOf(p.spec)<0)      return false;
-  if(skipDim!=='color'    && finderColors.length>0     && !_productColors(p).some(function(c){return finderColors.indexOf(c)>=0;})) return false;
+  if(skipDim!=='colorPrimary'   && finderColorsPrimary.length>0   && finderColorsPrimary.indexOf(p.color)<0)    return false;
+  if(skipDim!=='colorSecondary' && finderColorsSecondary.length>0 && finderColorsSecondary.indexOf(p.color2)<0) return false;
   if(skipDim!=='price'){
     if(priceMin!==null&&p.price<priceMin) return false;
     if(priceMax!==null&&p.price>priceMax) return false;
@@ -6170,15 +6227,6 @@ function _countBy(list, keyFn){
   list.forEach(function(r){ var k=keyFn(r.p); if(k) counts[k]=(counts[k]||0)+1; });
   return counts;
 }
-// Colore primario + secondario (se il nome menziona due colori distinti, es.
-// "Marrone-Nero"): un prodotto compare sotto entrambi i filtri colore, non
-// solo sotto il primario -- niente color singolo indovinato a caso.
-function _productColors(p){ return [p.color,p.color2].filter(Boolean); }
-function _countByMulti(list, keysFn){
-  var counts={};
-  list.forEach(function(r){ keysFn(r.p).forEach(function(k){ if(k) counts[k]=(counts[k]||0)+1; }); });
-  return counts;
-}
 function _searchFilterCounts(counts, inputId){
   var q=(document.getElementById(inputId)||{}).value||'';
   if(!q) return counts;
@@ -6186,13 +6234,16 @@ function _searchFilterCounts(counts, inputId){
   Object.keys(counts).forEach(function(k){ if(k.toLowerCase().indexOf(q.toLowerCase())>=0) out[k]=counts[k]; });
   return out;
 }
+// Elenco opzioni in stile accordion: rettangoli pieni impilati (non pillole
+// affiancate), coprono tutta la larghezza della sidebar, attaccati senza
+// spazi tra loro -- stessa resa per Genere/Categoria/Gruppo/Tipo/Colore.
 function _renderChipList(wrapId, counts, selected, toggleFn, emptyMsg){
   var wrap=document.getElementById(wrapId); if(!wrap) return;
   var keys=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];}).slice(0,80);
   wrap.innerHTML=keys.map(function(k){
     var active=selected.indexOf(k)>=0;
-    return '<div class="finder-chip'+(active?' active':'')+'" onclick="'+toggleFn+'(\''+k.replace(/'/g,"\\'")+'\')">'+cap(k)+' <span style="opacity:.55">('+counts[k]+')</span></div>';
-  }).join('')||'<span style="color:#aaa;font-size:.8rem">'+emptyMsg+'</span>';
+    return '<div class="finder-opt'+(active?' active':'')+'" onclick="'+toggleFn+'(\''+k.replace(/'/g,"\\'")+'\')">'+cap(k)+' <span style="opacity:.55">('+counts[k]+')</span></div>';
+  }).join('')||'<div class="finder-opt-empty-msg">'+emptyMsg+'</div>';
 }
 function _rebuildFinderChips(){
   var genderPool=_finderPoolExcept('gender',true);
@@ -6200,34 +6251,41 @@ function _rebuildFinderChips(){
   ['M','F','K','U'].forEach(function(v){
     var el=document.getElementById('fgc-'+v); if(!el) return;
     var n=genderCounts[v]||0;
-    el.className='finder-chip'+(finderGenders.indexOf(v)>=0?' active':'')+(n===0?' finder-chip-empty':'');
+    el.className='finder-opt'+(finderGenders.indexOf(v)>=0?' active':'')+(n===0?' finder-opt-empty':'');
   });
 
   var l1Pool=_finderPoolExcept('catL1',true);
   finderCatsL1=finderCatsL1.filter(function(c){return l1Pool.some(function(r){return r.p.cat===c;});});
-  _renderChipList('finder-catl1-wrap', _countBy(l1Pool, function(p){return p.cat;}), finderCatsL1, 'toggleFinderCatL1', 'No categories found');
+  _renderChipList('finder-catl1-wrap', _countBy(l1Pool, function(p){return p.cat;}), finderCatsL1, 'toggleFinderCatL1', 'Nessuna categoria trovata');
 
   var grpPool=_finderPoolExcept('group',true);
   finderCategories=finderCategories.filter(function(c){return grpPool.some(function(r){return r.p.category===c;});});
-  _renderChipList('finder-cat-wrap', _searchFilterCounts(_countBy(grpPool, function(p){return p.category;}),'finder-cat-search'), finderCategories, 'toggleFinderCat', 'No groups found');
+  _renderChipList('finder-cat-wrap', _searchFilterCounts(_countBy(grpPool, function(p){return p.category;}),'finder-cat-search'), finderCategories, 'toggleFinderCat', 'Nessun gruppo trovato');
 
   var specPool=_finderPoolExcept('specific',true);
   finderSpecifics=finderSpecifics.filter(function(s){return specPool.some(function(r){return r.p.spec===s;});});
-  _renderChipList('finder-spec-wrap', _searchFilterCounts(_countBy(specPool, function(p){return p.spec;}),'finder-spec-search'), finderSpecifics, 'toggleFinderSpecific', 'No specific types found');
+  _renderChipList('finder-spec-wrap', _searchFilterCounts(_countBy(specPool, function(p){return p.spec;}),'finder-spec-search'), finderSpecifics, 'toggleFinderSpecific', 'Nessun tipo specifico trovato');
 
-  var colorPool=_finderPoolExcept('color',true);
-  finderColors=finderColors.filter(function(c){return colorPool.some(function(r){return _productColors(r.p).indexOf(c)>=0;});});
-  _renderChipList('finder-color-wrap', _searchFilterCounts(_countByMulti(colorPool, _productColors),'finder-color-search'), finderColors, 'toggleFinderColor', 'No colors found');
+  var colorPPool=_finderPoolExcept('colorPrimary',true);
+  finderColorsPrimary=finderColorsPrimary.filter(function(c){return colorPPool.some(function(r){return r.p.color===c;});});
+  _renderChipList('finder-color-primary-wrap', _countBy(colorPPool, function(p){return p.color;}), finderColorsPrimary, 'toggleFinderColorPrimary', 'Nessun colore trovato');
+
+  var colorSPool=_finderPoolExcept('colorSecondary',true);
+  finderColorsSecondary=finderColorsSecondary.filter(function(c){return colorSPool.some(function(r){return r.p.color2===c;});});
+  _renderChipList('finder-color-secondary-wrap', _countBy(colorSPool, function(p){return p.color2;}), finderColorsSecondary, 'toggleFinderColorSecondary', 'Nessun colore trovato');
+}
+function toggleFinderAccordion(key){
+  var el=document.getElementById('acc-'+key); if(!el) return;
+  el.classList.toggle('open');
 }
 function filterFinderCats(q){ _rebuildFinderChips(); }
 function filterFinderSpecifics(q){ _rebuildFinderChips(); }
-function filterFinderColors(q){ _rebuildFinderChips(); }
 function toggleFinderGender(g){
   var idx=finderGenders.indexOf(g);
   if(idx>=0) finderGenders.splice(idx,1); else finderGenders.push(g);
   ['M','F','K','U'].forEach(function(v){
     var el=document.getElementById('fgc-'+v);
-    if(el) el.className='finder-chip'+(finderGenders.indexOf(v)>=0?' active':'');
+    if(el) el.className='finder-opt'+(finderGenders.indexOf(v)>=0?' active':'');
   });
   applyFinderFilters();
 }
@@ -6246,9 +6304,14 @@ function toggleFinderSpecific(spec){
   if(idx>=0) finderSpecifics.splice(idx,1); else finderSpecifics.push(spec);
   applyFinderFilters();
 }
-function toggleFinderColor(color){
-  var idx=finderColors.indexOf(color);
-  if(idx>=0) finderColors.splice(idx,1); else finderColors.push(color);
+function toggleFinderColorPrimary(color){
+  var idx=finderColorsPrimary.indexOf(color);
+  if(idx>=0) finderColorsPrimary.splice(idx,1); else finderColorsPrimary.push(color);
+  applyFinderFilters();
+}
+function toggleFinderColorSecondary(color){
+  var idx=finderColorsSecondary.indexOf(color);
+  if(idx>=0) finderColorsSecondary.splice(idx,1); else finderColorsSecondary.push(color);
   applyFinderFilters();
 }
 // ── Brand checklist: quali brand contano nel pool attuale, con possibilita'
@@ -6265,7 +6328,7 @@ function _renderFinderBrandChecklist(pool){
     var name=(getBrand(bid)||{name:bid}).name;
     var checked=finderExcludedBrands.indexOf(bid)<0;
     return '<label class="finder-brand-item"><input type="checkbox"'+(checked?' checked':'')+' onchange="toggleFinderBrandExclude(\''+bid+'\')"> <span title="'+name+'">'+name+' ('+counts[bid]+')</span></label>';
-  }).join('')||'<span style="color:#aaa;font-size:.8rem">No brands in this selection</span>';
+  }).join('')||'<span style="color:#aaa;font-size:.8rem">Nessun brand in questa selezione</span>';
 }
 function toggleFinderBrandExclude(bid){
   var idx=finderExcludedBrands.indexOf(bid);
@@ -6284,13 +6347,13 @@ function _finderBrandAll(include){
 }
 function goToFinder(){
   ensureAllBrandsLoaded(function(){
-    finderGenders=[]; finderCatsL1=[]; finderCategories=[]; finderSpecifics=[]; finderColors=[]; finderExcludedBrands=[];
+    finderGenders=[]; finderCatsL1=[]; finderCategories=[]; finderSpecifics=[]; finderColorsPrimary=[]; finderColorsSecondary=[]; finderExcludedBrands=[];
     document.getElementById('finder-cat-search').value='';
     document.getElementById('finder-spec-search').value='';
-    document.getElementById('finder-color-search').value='';
     document.getElementById('finder-price-min').value='';
     document.getElementById('finder-price-max').value='';
-    document.querySelectorAll('#finder-gender-row .finder-chip').forEach(function(c){ c.className='finder-chip'; });
+    document.querySelectorAll('#finder-gender-row .finder-opt').forEach(function(c){ c.className='finder-opt'; });
+    document.querySelectorAll('.finder-accordion').forEach(function(a){ a.classList.remove('open'); });
     showScreen('screen-finder-results');
     applyFinderFilters();
   });
@@ -6309,9 +6372,9 @@ function applyFinderFilters(){
 function renderFinderResults(){
   var grid=document.getElementById('finder-brand-grid');
   var countEl=document.getElementById('finder-count');
-  countEl.textContent=finderResults.length+' products found';
+  countEl.textContent=finderResults.length+' prodotti trovati';
   if(!finderResults.length){
-    grid.innerHTML='<div class="finder-empty">No products found matching the selected criteria.</div>';
+    grid.innerHTML='<div class="finder-empty">Nessun prodotto trovato con i criteri selezionati.</div>';
     return;
   }
   // Punto UI: max 300 card renderizzate insieme, per non appesantire il DOM
