@@ -1627,8 +1627,14 @@ var _valueEndLabelsPlugin={
             ctx.fillText(label,_x,bar.y);
           }
         } else {
+          // Barra verticale: l'etichetta va sopra la punta della barra. Se la barra e'
+          // abbastanza alta da sfiorare il bordo superiore dell'area del grafico,
+          // "bar.y-2" finirebbe fuori canvas (invisibile) -- stessa logica di clamp
+          // gia' usata sopra per le barre orizzontali: resta sempre dentro chartArea,
+          // anche a costo di sovrapporsi leggermente alla cima della barra.
           ctx.textAlign='center'; ctx.textBaseline='bottom';
-          ctx.fillText(label,bar.x,bar.y-2);
+          var _minY=(chart.chartArea?chart.chartArea.top:0)+10;
+          ctx.fillText(label,bar.x,Math.max(bar.y-2,_minY));
         }
       });
     });
@@ -2903,6 +2909,11 @@ function renderComparison(){
     var allProds=[];
     for(var i=0;i<selectedBrands.length;i++) for(var j=0;j<allFiltered[selectedBrands[i]].length;j++) allProds.push(allFiltered[selectedBrands[i]][j]);
     var catItems=getCatItems(allProds);
+    // Ordinati per N.SKU decrescente (somma su tutti i brand selezionati), non
+    // alfabetico -- i gruppi piu' rilevanti nel confronto vanno letti per primi
+    // (stesso criterio gia' usato in Seasons comparison, vedi _seasonSortedCatItems).
+    var _catCountsCmp={}; allProds.forEach(function(p){ if(p.category) _catCountsCmp[p.category]=(_catCountsCmp[p.category]||0)+1; });
+    catItems.sort(function(a,b){ return (_catCountsCmp[b.key]||0)-(_catCountsCmp[a.key]||0); });
     setTitle("ctitle1-compare","Price range - brand comparison");
     setTitle("ctitle2-compare","Group distribution by brand");
     setTitle("ctitle3-compare","SKU price distribution");
@@ -4759,6 +4770,28 @@ function drawBarGrouped(canvasId,xItems,groups,getCount){
   var canvas=document.getElementById(canvasId); if(!canvas) return;
   destroyChart(canvasId);
   if(!xItems.length) return;
+  // Con molte categorie (es. brand comparison su un mercato con tanti product group)
+  // Chart.js responsive comprime tutto nella larghezza fissa del wrapper: le barre si
+  // stringono e le etichette N.SKU sopra ciascuna finiscono per accavallarsi/sparire.
+  // Stesso rimedio gia' usato in drawBoxplotGrouped: sotto una soglia minima di spazio
+  // per gruppo, si allarga il canvas (via un wrapper interno dedicato, perche' Chart.js
+  // in modalita' responsive ridimensiona SE STESSO in base al genitore diretto) e si
+  // abilita lo scroll orizzontale sul contenitore visibile invece di comprimere gli slot.
+  var _alreadyWrapped=canvas.parentElement&&canvas.parentElement.className==='bargrouped-inner';
+  var inner=_alreadyWrapped?canvas.parentElement:null;
+  var wrap=_alreadyWrapped?canvas.parentElement.parentElement:canvas.parentElement;
+  var nItems=Math.max(1,xItems.length), nGroups=Math.max(1,groups.length);
+  var minSlotW=Math.max(46,nGroups*18+(nGroups-1)*3+20);
+  var neededW=50+minSlotW*nItems;
+  var availW=wrap?(wrap.clientWidth||420):420;
+  if(neededW>availW){
+    if(!inner){ inner=document.createElement('div'); inner.className='bargrouped-inner'; inner.style.cssText='height:100%;position:relative'; wrap.insertBefore(inner,canvas); inner.appendChild(canvas); }
+    inner.style.width=neededW+'px';
+    if(wrap) wrap.style.overflowX='auto';
+  } else {
+    if(inner){ wrap.insertBefore(canvas,inner); inner.remove(); }
+    if(wrap) wrap.style.overflowX='';
+  }
   var datasets=[];
   for(var gi=0;gi<groups.length;gi++){
     var g=groups[gi];
@@ -4804,18 +4837,26 @@ function drawPriceHistogram(canvasId,groups,getProds,bid){
   destroyChart(canvasId);
   var mode=_histMode[canvasId]||'%';
 
-  // Toggle %/valore assoluto — placed in the chart-title bar
+  // Toggle %/valore assoluto — placed in the chart-title bar (o nell'header della
+  // modale di ingrandimento quando canvasId e' 'zoom-canvas': li' non esiste un
+  // "ctitle3-zoom-canvas", il toggle spariva del tutto in quel contesto).
   var scope=canvasId.replace('canvas3-','');
-  var titleEl=document.getElementById('ctitle3-'+scope);
+  var isZoomed=canvasId==='zoom-canvas';
+  var titleEl=isZoomed?document.querySelector('.chart-zoom-header'):document.getElementById('ctitle3-'+scope);
   var toggleId='hist-toggle-'+canvasId;
   var old_btn=document.getElementById(toggleId); if(old_btn) old_btn.remove();
   if(titleEl){
     var btn=document.createElement('button');
     btn.id=toggleId; btn.className='bp-filter-btn';
-    btn.style.cssText='margin-left:auto;font-size:10px;padding:2px 8px;flex-shrink:0;';
+    btn.style.cssText=isZoomed?'font-size:10px;padding:2px 8px;flex-shrink:0;':'margin-left:auto;font-size:10px;padding:2px 8px;flex-shrink:0;';
     btn.textContent=mode==='%'?'Show N. SKU':'Show %';
     btn.onclick=function(){toggleHistMode(canvasId,groups,getProds,bid);};
-    titleEl.appendChild(btn);
+    if(isZoomed){
+      var dlBtn=titleEl.querySelector('.btn-zoom-dl');
+      titleEl.insertBefore(btn,dlBtn);
+    } else {
+      titleEl.appendChild(btn);
+    }
   }
 
   // Collect all prices to compute bin width
@@ -6551,7 +6592,10 @@ function renderZoomedChart(){
         drawBarGrouped('zoom-canvas',getSeasonItems(),brandGroups,function(s,bid){var c=0,fp=allFiltered[bid];for(var i=0;i<fp.length;i++) if(fp[i].season===s) c++;return c;});
       } else {
         var ap2=[]; for(var i3=0;i3<selectedBrands.length;i3++) for(var j2=0;j2<allFiltered[selectedBrands[i3]].length;j2++) ap2.push(allFiltered[selectedBrands[i3]][j2]);
-        drawBarGrouped('zoom-canvas',getCatItems(ap2),brandGroups,function(cat,bid){var c=0,fp=allFiltered[bid];for(var i=0;i<fp.length;i++) if(fp[i].category===cat) c++;return c;});
+        var catItemsZ=getCatItems(ap2);
+        var _catCountsZ={}; ap2.forEach(function(p){ if(p.category) _catCountsZ[p.category]=(_catCountsZ[p.category]||0)+1; });
+        catItemsZ.sort(function(a,b){ return (_catCountsZ[b.key]||0)-(_catCountsZ[a.key]||0); });
+        drawBarGrouped('zoom-canvas',catItemsZ,brandGroups,function(cat,bid){var c=0,fp=allFiltered[bid];for(var i=0;i<fp.length;i++) if(fp[i].category===cat) c++;return c;});
       }
       break;
     case 'histogram-compare':
