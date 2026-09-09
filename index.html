@@ -2196,6 +2196,14 @@ function zb(type,scope,lbl){
     +'<button class="btn-zoom" onclick="downloadChartImage(&apos;'+type+'&apos;,&apos;'+scope+'&apos;,this)" title="Scarica immagine (PNG)">&#128247;</button>'
     +'<button class="btn-zoom" onclick="openZoom(&apos;'+type+'&apos;,&apos;'+scope+'&apos;)" title="Ingrandisci">&#10697;</button>';
 }
+// Come zb(), ma solo il pulsante download PNG (niente ingrandimento/export dati) --
+// usato dai grafici da sezione 04 in poi che ne erano privi. downloadChartImage()
+// cattura l'intera .chart-card via html2canvas quindi funziona indipendentemente dal
+// tipo di contenuto (canvas Chart.js, tabella, heatmap/treemap fatti di div).
+function dlb(type,scope,lbl){
+  return '<span style="flex:1">'+lbl+'</span>'
+    +'<button class="btn-zoom" onclick="downloadChartImage(&apos;'+type+'&apos;,&apos;'+scope+'&apos;,this)" title="Scarica immagine (PNG)">&#128247;</button>';
+}
 function switchSingleTab(bid,tab){
   var cBtn=document.getElementById('stab-charts-'+bid), rBtn=document.getElementById('stab-report-'+bid);
   var cCt=document.getElementById('stabcontent-charts-'+bid), rCt=document.getElementById('stabcontent-report-'+bid);
@@ -2275,13 +2283,13 @@ function chartsHTMLSingle(bid){
     // ── 04 Brand vs market ────────────────────────────────────────────────
     +'<div class="di-section" data-di-sec="sec04">'
     +'<div class="charts-row" id="pdf-page5-'+bid+'">'
-      +'<div class="chart-card"><div class="chart-title" id="ctitle-mkt-overall-'+bid+'"><span style="flex:1">Prezzo medio: brand vs mercato (Tot/Uomo/Donna/Bambino/Unisex)</span></div>'
+      +'<div class="chart-card"><div class="chart-title" id="ctitle-mkt-overall-'+bid+'">'+dlb('mkt-overall',bid,'Prezzo medio: brand vs mercato (Tot/Uomo/Donna/Bambino/Unisex)')+'</div>'
         +'<div class="chart-inner"><canvas id="canvas-mkt-overall-'+bid+'"></canvas></div></div>'
-      +'<div class="chart-card"><div class="chart-title" id="ctitle-mkt-section-'+bid+'"><span style="flex:1">Per categoria: brand vs mercato</span></div>'
+      +'<div class="chart-card"><div class="chart-title" id="ctitle-mkt-section-'+bid+'">'+dlb('mkt-section',bid,'Per categoria: brand vs mercato')+'</div>'
         +'<div class="chart-inner"><canvas id="canvas-mkt-section-'+bid+'"></canvas></div></div>'
     +'</div>'
     +'<div class="charts-row" id="pdf-page6-'+bid+'">'
-      +'<div class="chart-card" style="grid-column:1 / -1"><div class="chart-title" id="ctitle-mkt-group-'+bid+'"><span style="flex:1">Per gruppo (con categoria di riferimento): brand vs mercato</span></div>'
+      +'<div class="chart-card" style="grid-column:1 / -1"><div class="chart-title" id="ctitle-mkt-group-'+bid+'">'+dlb('mkt-group',bid,'Per gruppo (con categoria di riferimento): brand vs mercato')+'</div>'
         +'<div class="chart-inner" style="height:420px"><canvas id="canvas-mkt-group-'+bid+'"></canvas></div></div>'
     +'</div>'
     +'</div>'
@@ -2290,7 +2298,7 @@ function chartsHTMLSingle(bid){
     +'<div class="di-section" data-di-sec="sec05">'
     +'<div class="charts-row" id="pdf-page3-'+bid+'">'
       +'<div class="chart-card" style="grid-column:1 / -1">'
-        +'<div class="chart-title"><span style="flex:1">Product group &times; gender</span></div>'
+        +'<div class="chart-title">'+dlb('gg-table',bid,'Product group &times; gender')+'</div>'
         +'<div class="gg-table-wrap" id="gg-table-'+bid+'"></div></div>'
     +'</div>'
     +'</div>'
@@ -2298,7 +2306,7 @@ function chartsHTMLSingle(bid){
     // ── 06 Specific product types ─────────────────────────────────────────
     +'<div class="di-section" data-di-sec="sec06">'
     +'<div class="charts-row" id="pdf-page7-'+bid+'">'
-      +'<div class="chart-card" style="grid-column:1 / -1"><div class="chart-title" id="ctitle-mkt-specific-'+bid+'"><span style="flex:1">Per tax specific (con gruppo di riferimento): brand vs mercato</span></div>'
+      +'<div class="chart-card" style="grid-column:1 / -1"><div class="chart-title" id="ctitle-mkt-specific-'+bid+'">'+dlb('mkt-specific',bid,'Per tax specific (con gruppo di riferimento): brand vs mercato')+'</div>'
         +'<div class="chart-inner" style="height:500px"><canvas id="canvas-mkt-specific-'+bid+'"></canvas></div></div>'
     +'</div>'
     +'<div id="method-strip-'+bid+'"></div>'
@@ -2316,42 +2324,42 @@ function chartsHTMLSingle(bid){
     // layout del treemap con 5+ gruppi, produce rettangoli troppo piccoli/sovrapposti
     // (verificato via screenshot).
     +'<div class="charts-row" style="grid-template-columns:1fr">'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Group assortment — SS26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-treemap-ss',bid,'Group assortment — SS26')+'</div>'
         +'<div class="chart-inner" id="treemap-scss-'+bid+'"></div>'
         +'<div class="treemap-legend" id="treemap-legend-scss-'+bid+'"></div></div>'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Group assortment — FW26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-treemap-fw',bid,'Group assortment — FW26')+'</div>'
         +'<div class="chart-inner" id="treemap-scfw-'+bid+'"></div>'
         +'<div class="treemap-legend" id="treemap-legend-scfw-'+bid+'"></div></div>'
     +'</div>'
     +'<div class="charts-row">'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Gender × category — SS26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-heatmap-ss',bid,'Gender × category — SS26')+'</div>'
         +'<div class="heatmap-wrap"><div id="heatmap-scss-'+bid+'"></div></div></div>'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Gender × category — FW26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-heatmap-fw',bid,'Gender × category — FW26')+'</div>'
         +'<div class="heatmap-wrap"><div id="heatmap-scfw-'+bid+'"></div></div></div>'
     +'</div>'
     // Blocco 2 (rispecchia sec02): boxplot + bar + histogram, FW26 vs SS26 come serie
     // affiancate per product group (stesso pattern grouped gia' usato altrove).
     +'<div class="charts-row" style="grid-template-columns:1fr">'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Price range by group: FW26 vs SS26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-boxplot',bid,'Price range by group: FW26 vs SS26')+'</div>'
         +'<div class="chart-inner-boxplot" id="seasoncmp-boxwrap-'+bid+'"><canvas id="seasoncmp-canvas1-'+bid+'"></canvas></div></div>'
     +'</div>'
     +'<div class="charts-row">'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">SKU count by group: FW26 vs SS26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-barcount',bid,'SKU count by group: FW26 vs SS26')+'</div>'
         +'<div class="chart-inner" style="height:320px"><canvas id="seasoncmp-canvas2-'+bid+'"></canvas></div></div>'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">SKU price distribution: FW26 vs SS26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-histogram',bid,'SKU price distribution: FW26 vs SS26')+'</div>'
         +'<div class="chart-inner-tall"><canvas id="seasoncmp-canvas3-'+bid+'"></canvas></div></div>'
     +'</div>'
     // Blocco 3 (equivalente comparabile di sec03): tabella variazioni KPI per gruppo,
     // non la matrice a bande di prezzo (non leggibile su 2 stagioni x N bande).
     +'<div class="charts-row" style="grid-template-columns:1fr">'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Group price &amp; mix: FW26 vs SS26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-kpitable',bid,'Group price &amp; mix: FW26 vs SS26')+'</div>'
         +'<div id="seasoncmp-kpitable-'+bid+'"></div></div>'
     +'</div>'
     // Blocco 4 (extra, nessun equivalente in 01-06): turnover modelli + mix shift.
     +'<div class="charts-row">'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">New vs discontinued models</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-turnover',bid,'New vs discontinued models')+'</div>'
         +'<div id="seasoncmp-turnover-'+bid+'"></div></div>'
-      +'<div class="chart-card"><div class="chart-title"><span style="flex:1">Gender &amp; category mix: FW26 vs SS26</span></div>'
+      +'<div class="chart-card"><div class="chart-title">'+dlb('sc-donuts',bid,'Gender &amp; category mix: FW26 vs SS26')+'</div>'
         +'<div id="seasoncmp-donuts-'+bid+'" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
           +'<div style="flex:1;min-width:140px;max-width:220px"><canvas id="seasoncmp-donut-gender-'+bid+'"></canvas></div>'
           +'<div style="flex:1;min-width:140px;max-width:220px"><canvas id="seasoncmp-donut-cat-'+bid+'"></canvas></div>'
@@ -2652,7 +2660,7 @@ function chartsHTMLCompare(){
   var ggCols=selectedBrands.map(function(bid){
     var b=getBrand(bid)||{name:bid,color:'#CC0000'};
     return '<div class="chart-card" style="grid-column:1 / -1">'
-      +'<div class="chart-title"><span style="flex:1">'+b.name+' &mdash; Product group &times; gender</span></div>'
+      +'<div class="chart-title">'+dlb('gg-table-compare',bid,b.name+' &mdash; Product group &times; gender')+'</div>'
       +'<div class="gg-table-wrap" id="gg-table-compare-'+bid+'"></div></div>';
   }).join('');
   // Punto 6 README QA: la modalita' comparison usa ora la stessa navigazione a sezioni
@@ -6448,9 +6456,19 @@ var _ZOOM_TITLES={
   boxplot:'Price range by group',histogram:'SKU price distribution',
   'boxplot-compare':'Price range - brand comparison',
   'barcompare':'Group distribution by brand',
-  'histogram-compare':'SKU price distribution'
+  'histogram-compare':'SKU price distribution',
+  priceladder:'Price ladder: brand vs market'
 };
 function openZoom(type,scope){
+  // #chart-zoom-overlay e' dichiarato nell'HTML come fratello di #screen-dashboard,
+  // non figlio -- tutte le regole CSS "#screen-dashboard .xxx" (heatmap, price
+  // ladder, ecc.) non si applicano quindi al contenuto renderizzato dentro la
+  // modale di ingrandimento (verificato: bug reale, non solo sospetto). Spostarlo
+  // dentro #screen-dashboard una volta sola risolve alla radice per tutti i tipi
+  // di grafico "custom HTML" (non-canvas), non solo l'heatmap segnalata.
+  var _zoomOverlayEl=document.getElementById('chart-zoom-overlay');
+  var _dashEl=document.getElementById('screen-dashboard');
+  if(_zoomOverlayEl && _dashEl && !_dashEl.contains(_zoomOverlayEl)) _dashEl.appendChild(_zoomOverlayEl);
   _zoomType=type; _zoomScope=scope;
   var ttl=_ZOOM_TITLES[type]||(type.indexOf('treemap-compare-')===0?'Group assortment':type.indexOf('heatmap-compare-')===0?'Gender x category':type);
   document.getElementById('zoom-chart-title').textContent=ttl;
@@ -6461,6 +6479,8 @@ function openZoom(type,scope){
     inner.innerHTML='<div class="heatmap-wrap" style="max-height:500px;overflow-y:auto"><div id="zoom-heatmap"></div></div>';
   else if(type==='catpricemix')
     inner.innerHTML='<div class="gg-table-wrap" id="zoom-pricegroup" style="max-height:500px;overflow-y:auto"></div>';
+  else if(type==='priceladder')
+    inner.innerHTML='<div id="zoom-priceladder" style="max-height:500px;overflow-y:auto"></div>';
   else if(type==='boxplot'||type==='boxplot-compare')
     inner.innerHTML='<div id="zoom-box-wrap" style="width:100%;height:500px;position:relative"><canvas id="zoom-canvas"></canvas></div>';
   else
@@ -6491,6 +6511,7 @@ function renderZoomedChart(){
   if(type==='heatmap'){ renderHeatmap('zoom-heatmap',prods,scope); return; }
   if(type.indexOf('heatmap-compare-')===0){ var _hcb=type.replace('heatmap-compare-',''); renderHeatmap('zoom-heatmap',allFiltered[_hcb]||[],_hcb); return; }
   if(type==='catpricemix'){ renderCategoryPriceMix('zoom-pricegroup',prods,scope); return; }
+  if(type==='priceladder'){ renderPriceLadder('zoom-priceladder',prods,scope); return; }
   destroyChart('zoom-canvas');
   var bg=[{key:scope,label:(getBrand(scope)||{name:scope}).name,color:BRAND_COLORS[scope]||'#CC0000'}];
   switch(type){
@@ -6499,6 +6520,9 @@ function renderZoomedChart(){
       if(isSeasonCompare()){
         drawBoxplotGrouped('zoom-canvas','zoom-box-wrap',getCatItems(prods),getSeasonGroups(),
           function(cat,s){var o=[];for(var i=0;i<prods.length;i++) if(prods[i].category===cat&&prods[i].season===s) o.push(prods[i].price);return o;},scope);
+      } else if(isCategoryCompare()){
+        drawBoxplotGrouped('zoom-canvas','zoom-box-wrap',getCategoryGroups(),bg,
+          function(cat){var o=[];for(var i=0;i<prods.length;i++) if(prods[i].category===cat) o.push(prods[i].price);return o;},scope);
       } else {
         drawBoxplotGrouped('zoom-canvas','zoom-box-wrap',getCatItems(prods),bg,
           function(cat){var o=[];for(var i=0;i<prods.length;i++) if(prods[i].category===cat) o.push(prods[i].price);return o;},scope);
@@ -6507,6 +6531,8 @@ function renderZoomedChart(){
     case 'histogram':
       if(isSeasonCompare()){
         drawPriceHistogram('zoom-canvas',getSeasonGroups(),function(sid){return prods.filter(function(p){return p.season===sid;});},scope);
+      } else if(isCategoryCompare()){
+        drawPriceHistogram('zoom-canvas',getCategoryGroups(),function(catKey){return prods.filter(function(p){return p.category===catKey;});},scope);
       } else { drawPriceHistogram('zoom-canvas',bg,function(){return prods;},scope); }
       break;
     case 'boxplot-compare':
