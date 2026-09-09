@@ -21,9 +21,10 @@
 #auth-gate.unlocked{display:none}
 .auth-box{background:#181716;border:1px solid #2c2a29;border-radius:10px;
   padding:40px 36px;width:100%;max-width:340px;text-align:center}
-.auth-box .auth-logo{font:800 13px/1.15 "Archivo",Arial,sans-serif;letter-spacing:-.01em;
-  color:#f3f2f2;margin-bottom:24px}
+.auth-box .auth-logo{font:800 20px/1.15 "Archivo",Arial,sans-serif;letter-spacing:-.01em;
+  color:#f3f2f2;margin-bottom:6px}
 .auth-box .auth-logo span{color:#dd2b0f}
+.auth-box .auth-subtitle{font-size:.78rem;color:#999;margin-bottom:24px}
 .auth-box label{display:block;font-size:.78rem;color:#999;margin-bottom:8px;text-align:left}
 .auth-box input{width:100%;padding:11px 12px;border-radius:6px;border:1.5px solid #333;
   background:#0d0d0d;color:#f3f2f2;font-size:.95rem;outline:none}
@@ -652,7 +653,7 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
   padding:14px 24px;box-shadow:none;gap:20px}
 #screen-dashboard>header .logo-col{flex-direction:row;align-items:center;gap:14px}
 #screen-dashboard>header .logo-img{display:none}
-#screen-dashboard>header .logo-col::before{content:"PRICE INTELLIGENCE";font:800 15px var(--dfont);
+#screen-dashboard>header .logo-col::before{content:"PRICE&MIX";font:800 15px var(--dfont);
   letter-spacing:-.01em;color:#fff}
 #screen-dashboard>header .logo-col::after{content:"";width:1px;height:20px;background:rgba(243,242,242,.3)}
 #screen-dashboard .btn-back{background:transparent;color:rgba(243,242,242,.75);border:1px solid rgba(243,242,242,.3);
@@ -981,7 +982,8 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 
 <div id="auth-gate">
   <div class="auth-box">
-    <div class="auth-logo">PRICE<br><span>INTELLIGENCE</span></div>
+    <div class="auth-logo">PRICE<span>&amp;</span>MIX</div>
+    <div class="auth-subtitle">Intelligence competitiva di prodotto</div>
     <label for="auth-pass">Immetti password</label>
     <input type="password" id="auth-pass" autocomplete="off" onkeydown="if(event.key==='Enter') checkAuthPassword()">
     <button onclick="checkAuthPassword()">Entra</button>
@@ -1311,7 +1313,6 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
 
   <div class="di-shell">
     <aside class="di-sidebar">
-      <div class="di-word" title="Analisi di posizionamento prezzo e assortimento del brand rispetto al mercato outdoor.">PRICE<br><span>INTELLIGENCE</span></div>
       <div class="di-brandblock" id="di-brand-block"></div>
       <div class="di-field di-season-top">
         <span class="filter-label">Season</span>
@@ -3364,12 +3365,9 @@ function openProductDetail(idx){
   }
   var descHtml=prod.desc?'<div class="pdd-desc">'+prod.desc+'</div>':'';
   var genderLbl=_SEASON_GENDER_LBL[prod.gender]||prod.gender||'n/d';
-  var stockHtml=prod.stock===true?'<span class="pdd-stock-ok">In stock</span>'
-    :(prod.stock===false?'<span class="pdd-stock-no">Non disponibile</span>':'n/d');
   var metaHtml='<div class="pdd-meta-grid">'
     +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Genere</span><span class="pdd-meta-val">'+genderLbl+'</span></div>'
     +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Stagione</span><span class="pdd-meta-val">'+(prod.season||'n/d')+'</span></div>'
-    +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Disponibilita</span><span class="pdd-meta-val">'+stockHtml+'</span></div>'
     +'<div class="pdd-meta-item"><span class="pdd-meta-lbl">Codice articolo</span><span class="pdd-meta-val">'+(prod.sku||'n/d')+'</span></div>'
     +'</div>';
   // Niente link al sito del brand: l'URL scrapato puo' non essere piu' valido (prodotto
