@@ -2196,12 +2196,13 @@ function zb(type,scope,lbl){
     +'<button class="btn-zoom" onclick="downloadChartImage(&apos;'+type+'&apos;,&apos;'+scope+'&apos;,this)" title="Scarica immagine (PNG)">&#128247;</button>'
     +'<button class="btn-zoom" onclick="openZoom(&apos;'+type+'&apos;,&apos;'+scope+'&apos;)" title="Ingrandisci">&#10697;</button>';
 }
-// Come zb(), ma solo il pulsante download PNG (niente ingrandimento/export dati) --
-// usato dai grafici da sezione 04 in poi che ne erano privi. downloadChartImage()
-// cattura l'intera .chart-card via html2canvas quindi funziona indipendentemente dal
-// tipo di contenuto (canvas Chart.js, tabella, heatmap/treemap fatti di div).
+// Come zb(), ma senza ingrandimento (i tipi custom-HTML da sezione 04 in poi non
+// hanno un caso in openZoom/renderZoomedChart e implementarlo non era richiesto) --
+// export dati (Excel, dati grezzi del brand) + immagine (PNG, l'intera .chart-card
+// via html2canvas, indipendente dal tipo di contenuto).
 function dlb(type,scope,lbl){
   return '<span style="flex:1">'+lbl+'</span>'
+    +'<button class="btn-zoom" onclick="downloadChartData(&apos;'+type+'&apos;,&apos;'+scope+'&apos;)" title="Scarica dati sorgente (Excel)">&#11015;</button>'
     +'<button class="btn-zoom" onclick="downloadChartImage(&apos;'+type+'&apos;,&apos;'+scope+'&apos;,this)" title="Scarica immagine (PNG)">&#128247;</button>';
 }
 function switchSingleTab(bid,tab){
