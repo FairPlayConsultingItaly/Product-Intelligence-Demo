@@ -2830,7 +2830,7 @@ function _mdaKpiCell(val,lbl,mktHtml){
 // price_std ASSENTE = prezzo pieno (export_json.py lo scrive solo se diverso da price):
 // e' l'assenza a portare informazione, non un dato mancante.
 // price_std < price = riga corrotta (418 SKU in FW26, 372 su salomon_it): va esclusa e
-// contata, altrimenti la liability diventa negativa e tutti i totali saltano.
+// contata, altrimenti lo sconto risulterebbe negativo e tutti i totali saltano.
 var _MD_COLOR_HEX={Black:'#1a1a1a',Blue:'#2f5fa8',Green:'#3f7a3f',Grey:'#8a8a8a',
   Brown:'#6b4a2f',Yellow:'#e3c23a',White:'#ffffff',Beige:'#d8c8a8',Red:'#c0392b',
   Orange:'#e07b2a',Pink:'#e08aae',Purple:'#7a4a9a',Multicolor:'#b9b2ab'};
@@ -2854,7 +2854,8 @@ function _mdPts(v){
   if(v==null||isNaN(v)) return '—';
   return (v>0?'+':'')+v.toLocaleString('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1});
 }
-// Riga di markdown: std = prezzo pieno, liab = mancato ricavo potenziale, d = sconto.
+// Riga di markdown: std = prezzo pieno, liab = differenza in euro (serve solo a
+// ricavare d), d = sconto in frazione, md = true se il prodotto e' scontato.
 function _mdRow(p){
   var price=(typeof p.price==='number'&&p.price>0)?p.price:null;
   if(price==null) return null;
@@ -2918,34 +2919,21 @@ function _mdaModel(bid){
     r.p=p; rows.push(r);
   });
 
-  var sumStd=0,sumPrice=0,liability=0,nMd=0,sumD=0;
+  var sumStd=0,sumPrice=0,nMd=0,sumD=0;
   rows.forEach(function(r){
-    sumStd+=r.std; sumPrice+=r.price; liability+=r.liab;
+    sumStd+=r.std; sumPrice+=r.price;
     if(r.md){ nMd++; sumD+=r.d; }
   });
   var nValid=rows.length;
-  // Gli stessi totali contati per MODELLO. Un modello con 28 colorazioni scontate
-  // espone 28 capi a scaffale, non uno: il numero per colorazioni e' l'esposizione
-  // reale, quello per modelli dice quanto vale lo sconto sul pezzo tipico.
-  var mdlStd=0, mdlPrice=0, mdlLiab=0;
-  getModels(bid).forEach(function(p){
-    var r=_mdRow(p);
-    if(!r||r.bad) return;
-    mdlStd+=r.std; mdlPrice+=r.price; mdlLiab+=r.liab;
-  });
-  // Markdown rate PONDERATO sull'intero assortimento: e' lo stesso identico numero
-  // mostrato fra gli indicatori sintetici, calcolato una volta sola.
-  var markdownRate=sumStd?(liability/sumStd*100):0;
-
   // fasce di profondita', intervalli chiusi a sinistra, sui soli scontati
   var BUCKETS=[{lo:0,hi:10,label:'0–10%'},{lo:10,hi:30,label:'10–30%'},
     {lo:30,hi:50,label:'30–50%'},{lo:50,hi:1e9,label:'50% e oltre'}];
-  BUCKETS.forEach(function(b){ b.n=0; b.liab=0; });
+  BUCKETS.forEach(function(b){ b.n=0; });
   rows.forEach(function(r){
     if(!r.md) return;
     var pct=r.d*100;
     for(var i=0;i<BUCKETS.length;i++){
-      if(pct>=BUCKETS[i].lo&&pct<BUCKETS[i].hi){ BUCKETS[i].n++; BUCKETS[i].liab+=r.liab; break; }
+      if(pct>=BUCKETS[i].lo&&pct<BUCKETS[i].hi){ BUCKETS[i].n++; break; }
     }
   });
   BUCKETS.forEach(function(b){ b.pct=nMd?Math.round(b.n/nMd*1000)/10:0; });
@@ -2960,13 +2948,11 @@ function _mdaModel(bid){
   });
   var colors=Object.keys(colMap).map(function(k){
     var e=colMap[k];
+    // sconto medio del colore, pesato sul listino: e' una percentuale, non un valore
     e.rate=e.std?(e.liab/e.std*100):0;
     e.pen=e.n?Math.round(e.nMd/e.n*1000)/10:0;
-    e.shareLiab=liability?(e.liab/liability*100):0;
     return e;
-  }).sort(function(a,b){ return b.liab-a.liab; });
-  var cum=0;
-  colors.forEach(function(e){ cum+=e.shareLiab; e.cum=cum; });
+  }).sort(function(a,b){ return b.n-a.n; });
 
   // fasce di prezzo sul prezzo ORIGINALE (std): quartili del brand in vista, non fasce
   // fisse -- i cataloghi hanno livelli di prezzo troppo diversi perche' fasce tonde
@@ -2984,25 +2970,18 @@ function _mdaModel(bid){
       var bStd=0,bLiab=0,bMd=0;
       sel.forEach(function(r){ bStd+=r.std; bLiab+=r.liab; if(r.md) bMd++; });
       priceBuckets.push({label:_mdEur(lo)+'–'+_mdEur(hi),labelTxt:_mdEurTxt(lo)+'–'+_mdEurTxt(hi),
-        n:sel.length,rate:bStd?(bLiab/bStd*100):0,pen:Math.round(bMd/sel.length*1000)/10,
-        liab:bLiab,shareLiab:liability?(bLiab/liability*100):0});
+        n:sel.length,rate:bStd?(bLiab/bStd*100):0,pen:Math.round(bMd/sel.length*1000)/10});
     }
   }
   // Spearman su TUTTE le righe valide, incluse quelle a sconto 0: restringerla agli
   // scontati introdurrebbe un bias di selezione.
   var rho=_mdSpearman(rows.map(function(r){return r.std;}),rows.map(function(r){return r.d;}));
 
-  // concentrazione: quanti SKU fanno il 50% e l'80% della liability
-  var byLiab=rows.filter(function(r){return r.md;}).sort(function(a,b){return b.liab-a.liab;});
-  var acc=0,n50=0,n80=0,i;
-  for(i=0;i<byLiab.length;i++){
-    acc+=byLiab[i].liab;
-    if(!n50&&acc>=liability*0.5) n50=i+1;
-    if(!n80&&acc>=liability*0.8){ n80=i+1; break; }
-  }
-  var top10n=Math.max(1,Math.round(byLiab.length*0.1)), top10Liab=0;
-  for(i=0;i<top10n&&i<byLiab.length;i++) top10Liab+=byLiab[i].liab;
-  var extreme=byLiab.filter(function(r){ return r.d>=0.6; });
+  // Ordinamento per profondita' di sconto: da qui escono sia i 15 piu' scontati sia
+  // gli sconti estremi, cosi' le due tabelle leggono la stessa graduatoria.
+  var byDisc=rows.filter(function(r){return r.md;}).sort(function(a,b){return b.d-a.d;});
+  var topDisc=byDisc.slice(0,15);
+  var extreme=byDisc.filter(function(r){ return r.d>=0.6; });
 
   var nameSet={}; prods.forEach(function(p){ if(p.name) nameSet[p.name]=true; });
   var isFiltered=(filterGender!=='all'||filterSection!=='all'||filterCategory!=='all'||filterCategories.length>0);
@@ -3013,16 +2992,13 @@ function _mdaModel(bid){
     nNoPrice:nNoPrice, anomalies:anomalies,
     hasSignal:nMd>0, nMd:nMd, nFull:nValid-nMd,
     penetration:nValid?(nMd/nValid*100):0,
-    markdownRate:markdownRate, liability:liability,
-    liabilityModels:mdlLiab, sumStdModels:mdlStd, sumPriceModels:mdlPrice,
     avgDiscDiscounted:nMd?(sumD/nMd*100):0,
     avgEffective:nValid?(sumPrice/nValid):0, avgOriginal:nValid?(sumStd/nValid):0,
     buckets:BUCKETS.filter(function(b){return b.n>0;}),
     colors:colors, colorCoverage:nValid?Math.round(nWithColor/nValid*100):0,
     priceBuckets:priceBuckets, rho:rho,
-    paretoN50:n50, paretoN80:n80, nMdRows:byLiab.length,
-    top10Share:liability?(top10Liab/liability*100):0, top10n:top10n,
-    topLiab:byLiab.slice(0,15), extreme:extreme,
+    nMdRows:byDisc.length,
+    topDisc:topDisc, extreme:extreme,
     bestSellers:computeBestSellers(prods,8),
     isFiltered:isFiltered,
     market:null, // riempito da _mdaMarket() quando i brand peer sono caricati
@@ -3134,9 +3110,6 @@ function ensureMarkdownAnalysis(bid,onDone){
 // una metrica, perche' una cella e' soppressa, perche' una sezione e' vuota.
 function _mdaHtml(m){
   var html='<div class="mda-doc">';
-  var sumStd=m.rows.reduce(function(a,r){return a+r.std;},0);
-  var sumPrice=m.rows.reduce(function(a,r){return a+r.price;},0);
-
   // ── intestazione ──────────────────────────────────────────────────────────────────
   // .mda-intro raggruppa titolo + filtri + KPI in un blocco unico: l'export PDF
   // (_pdfReportPages) impagina un blocco per volta e non deve poter spezzare questo.
@@ -3150,11 +3123,10 @@ function _mdaHtml(m){
   fl.push('prodotti in vista: '+m.nSku.toLocaleString('it-IT'));
   html+='<div class="mda-meta">'+fl.join(' &nbsp;·&nbsp; ')+'</div>';
   html+='<div class="kpi-row">'
-    +_mdaKpiCell(m.hasSignal?_mdPct(m.markdownRate):'n/d','Markdown rate',m.hasSignal?'ponderato sul listino':'listino non esposto')
-    +_mdaKpiCell(m.hasSignal?_mdEur(m.liability):'n/d','Markdown liability',
-        m.hasSignal?(_mdEur(m.liabilityModels)+' per modello'):null)
-    +_mdaKpiCell(m.hasSignal?_mdPct(m.penetration):'n/d','Prodotti in markdown',null)
+    +_mdaKpiCell(m.hasSignal?_mdPct(m.penetration):'n/d','Prodotti in markdown',m.hasSignal?null:'listino non esposto')
     +_mdaKpiCell(m.hasSignal?_mdPct(m.avgDiscDiscounted):'n/d','Sconto medio',m.hasSignal?'sui soli scontati':null)
+    +_mdaKpiCell(m.hasSignal?m.nMd.toLocaleString('it-IT'):'n/d','Prodotti scontati',m.hasSignal?('su '+m.nValid.toLocaleString('it-IT')):null)
+    +_mdaKpiCell(m.hasSignal?_mdEur(m.avgEffective):'n/d','Prezzo medio effettivo',m.hasSignal?(_mdEur(m.avgOriginal)+' a listino'):null)
   +'</div>';
   html+='</div>'; // /.mda-intro
 
@@ -3165,8 +3137,7 @@ function _mdaHtml(m){
   if(na){ html+=na; }
   else {
     html+=_mdaTable(['Indicatore','Valore'],[
-      ['Markdown rate ponderato sull\'assortimento','<strong>'+_mdPct(m.markdownRate)+'</strong>'],
-      ['Sconto medio semplice sui soli scontati',_mdPct(m.avgDiscDiscounted)],
+      ['Sconto medio semplice sui soli scontati','<strong>'+_mdPct(m.avgDiscDiscounted)+'</strong>'],
       ['Prodotti in markdown',m.nMd.toLocaleString('it-IT')+' su '+m.nValid.toLocaleString('it-IT')],
       ['Markdown penetration',_mdPct(m.penetration)],
       ['Prodotti a prezzo pieno',m.nFull.toLocaleString('it-IT')+' ('+_mdPct(100-m.penetration)+')']
@@ -3174,42 +3145,19 @@ function _mdaHtml(m){
     html+='<p class="mda-sub">Distribuzione per fasce di sconto</p>';
     var deepB=m.buckets.filter(function(b){return b.lo>=30;});
     var deep=deepB.reduce(function(a,b){return a+b.n;},0);
-    var deepL=deepB.reduce(function(a,b){return a+b.liab;},0);
     var bRows=m.buckets.map(function(b){
-      return [b.label,b.n.toLocaleString('it-IT'),_mdaShare(b.pct),_mdEur(b.liab),
-        _mdPct(m.liability?b.liab/m.liability*100:0)];
+      return [b.label,b.n.toLocaleString('it-IT'),_mdaShare(b.pct)];
     });
     bRows.push(['<strong>Oltre il 30%</strong>','<strong>'+deep.toLocaleString('it-IT')+'</strong>',
-      '<strong>'+_mdPct(m.nMd?deep/m.nMd*100:0)+'</strong>','<strong>'+_mdEur(deepL)+'</strong>',
-      '<strong>'+_mdPct(m.liability?deepL/m.liability*100:0)+'</strong>']);
-    html+=_mdaTable(['Fascia','Prodotti','Quota sugli scontati','Liability','Quota liability'],
-      bRows,[null,'r','r','r','r']);
-    html+='<p class="mda-note">Il markdown rate ponderato pesa ogni sconto per il valore del capo; lo sconto medio semplice '
-      +'considera i soli prodotti scontati e tratta ogni riga allo stesso modo.</p>';
+      '<strong>'+_mdPct(m.nMd?deep/m.nMd*100:0)+'</strong>']);
+    html+=_mdaTable(['Fascia','Prodotti','Quota sugli scontati'],
+      bRows,[null,'r','r']);
+    html+='<p class="mda-note">Lo sconto medio semplice considera i soli prodotti scontati e tratta ogni riga allo stesso modo.</p>';
   }
   html+='</div>';
 
-  // ── 2. impatto economico ──────────────────────────────────────────────────────────
-  html+='<div class="mda-section"><div class="mda-h2">2. Impatto economico</div>';
-  if(na){ html+=_mdNoData(m,'misurare l\'impatto economico',true); }
-  else {
-    html+=_mdaTable(['Indicatore','Su colorazioni','Su modelli'],[
-      ['Valore dell\'assortimento a listino',_mdEur(sumStd),_mdEur(m.sumStdModels)],
-      ['Valore dell\'assortimento ai prezzi esposti',_mdEur(sumPrice),_mdEur(m.sumPriceModels)],
-      ['<strong>Markdown liability</strong>','<strong>'+_mdEur(m.liability)+'</strong>','<strong>'+_mdEur(m.liabilityModels)+'</strong>'],
-      ['Prezzo medio originale',_mdEur(m.avgOriginal),'—'],
-      ['Prezzo medio effettivo',_mdEur(m.avgEffective),'—'],
-      ['Differenza sul prezzo medio',_mdEur(m.avgOriginal-m.avgEffective)
-        +' ('+_mdPct(m.avgOriginal?(m.avgOriginal-m.avgEffective)/m.avgOriginal*100:0)+')','—']
-    ],[null,'r','r']);
-    html+='<p class="mda-note">Su colorazioni ogni capo a scaffale conta una volta: &egrave; l\'esposizione reale. Su modelli lo sconto conta una volta per modello, qualunque sia il numero di colorazioni. '
-      +'misura il ricavo a cui si rinuncia se ogni pezzo si vende al prezzo oggi esposto. Senza le quantit&agrave; vendute '
-      +'non &egrave; misurabile quanta parte si sia gi&agrave; realizzata.</p>';
-  }
-  html+='</div>';
-
-  // ── 3. colore, brand vs mercato ───────────────────────────────────────────────────
-  html+='<div class="mda-section"><div class="mda-h2">3. Analisi per colore &mdash; brand vs mercato</div>';
+  // ── 2. colore, brand vs mercato ───────────────────────────────────────────────────
+  html+='<div class="mda-section"><div class="mda-h2">2. Analisi per colore &mdash; brand vs mercato</div>';
   if(!m.colorCoverage){
     html+='<p>Il sito non espone il colore dei prodotti: analisi non disponibile.</p>';
   } else if(na){ html+=_mdNoData(m,'analizzare i colori',true); }
@@ -3226,57 +3174,45 @@ function _mdaHtml(m){
         e.delta=(e.mkt==null)?null:Math.round((e.rate-e.mkt)*10)/10;
       });
       ranked.sort(function(a,b){
-        if(a.delta==null&&b.delta==null) return b.liab-a.liab;
+        if(a.delta==null&&b.delta==null) return b.n-a.n;
         if(a.delta==null) return 1;
         if(b.delta==null) return -1;
         return b.delta-a.delta;
       });
-      html+=_mdaTable(['Colore','Prodotti','Sconto brand','Sconto mercato','&Delta; punti','Prodotti mercato','Brand mercato','Liability','Quota'],
+      html+=_mdaTable(['Colore','Prodotti','Sconto brand','Sconto mercato','&Delta; punti','Prodotti mercato','Brand mercato'],
         ranked.map(function(e){
           return [_mdSwatch(e.color),e.n.toLocaleString('it-IT'),_mdPct(e.rate),
             (e.mkt==null?'—':_mdPct(e.mkt)),_mdaDeltaPts(e.delta),
-            (e.mkt==null?'—':e.mktN.toLocaleString('it-IT')),(e.mkt==null?'—':e.mktBrands),
-            _mdEur(e.liab),_mdPct(e.shareLiab)];
-        }),[null,'r','r','r','r','r','r','r','r']);
+            (e.mkt==null?'—':e.mktN.toLocaleString('it-IT')),(e.mkt==null?'—':e.mktBrands)];
+        }),[null,'r','r','r','r','r','r']);
       html+='<p class="mda-note">Righe ordinate per scostamento dal mercato. Il mercato comprende i soli brand che espongono '
         +'il prezzo di listino ('+mk.nUsed+' su '+mk.nPeers+' del dataset: '+mk.usedBrands.join(', ')+'), ristretto ai product '
         +'group presidiati da '+m.brand.name+'. Un brand che non dichiara il listino non entra nel calcolo: contarlo come sconto '
         +'zero abbasserebbe la media di mercato. Celle soppresse sotto 30 prodotti o 3 brand peer. Colori con meno di '+MIN_N
         +' prodotti esclusi dalla classifica.</p>';
     } else {
-      html+=_mdaTable(['Colore','Prodotti','Sconto brand','Penetration','Liability','Quota','Cumulata'],
+      html+=_mdaTable(['Colore','Prodotti','Sconto brand','Penetration'],
         ranked.map(function(e){
-          return [_mdSwatch(e.color),e.n.toLocaleString('it-IT'),_mdPct(e.rate),_mdPct(e.pen),
-            _mdEur(e.liab),_mdPct(e.shareLiab),_mdPct(e.cum)];
-        }),[null,'r','r','r','r','r','r']);
+          return [_mdSwatch(e.color),e.n.toLocaleString('it-IT'),_mdPct(e.rate),_mdPct(e.pen)];
+        }),[null,'r','r','r']);
       html+='<p class="mda-note">Nessun brand peer espone il prezzo di listino sui product group di questo brand: '
         +'confronto col mercato non disponibile.</p>';
     }
-    html+='<p class="mda-sub">Pareto dei colori sul markdown totale</p>';
-    html+=_mdaTable(['Colore','Liability','Quota','Cumulata','Penetration'],
-      m.colors.map(function(e){
-        return [_mdSwatch(e.color),_mdEur(e.liab),_mdaShare(e.shareLiab),_mdPct(e.cum),_mdPct(e.pen)];
-      }),[null,'r','r','r','r']);
     var notes=[];
     if(m.colorCoverage<100) notes.push('Copertura del colore: '+m.colorCoverage+'% dei prodotti in vista; il colore secondario non &egrave; usato.');
-    var colLiab=m.colors.reduce(function(a,e){return a+e.liab;},0);
-    if(m.liability&&colLiab<m.liability*0.999){
-      notes.push('Le quote sono calcolate sul markdown totale: la cumulata si ferma a '+_mdPct(colLiab/m.liability*100)
-        +' perch&eacute; il restante '+_mdEur(m.liability-colLiab)+' ricade su prodotti privi di colore.');
-    }
     if(small.length) notes.push('Sotto i '+MIN_N+' prodotti: '+small.map(function(e){return e.color+' ('+e.n+')';}).join(', ')+'.');
     if(notes.length) html+='<p class="mda-note">'+notes.join(' ')+'</p>';
   }
   html+='</div>';
 
-  // ── 4. relazione prezzo-sconto ────────────────────────────────────────────────────
-  html+='<div class="mda-section"><div class="mda-h2">4. Relazione prezzo &ndash; sconto</div>';
+  // ── 3. relazione prezzo-sconto ────────────────────────────────────────────────────
+  html+='<div class="mda-section"><div class="mda-h2">3. Relazione prezzo &ndash; sconto</div>';
   if(na){ html+=_mdNoData(m,'leggere la relazione prezzo/sconto',true); }
   else {
-    html+=_mdaTable(['Fascia di listino','Prodotti','Sconto medio','Penetration','Liability','Quota liability'],
+    html+=_mdaTable(['Fascia di listino','Prodotti','Sconto medio','Penetration'],
       m.priceBuckets.map(function(b){
-        return [b.label,b.n.toLocaleString('it-IT'),_mdPct(b.rate),_mdPct(b.pen),_mdEur(b.liab),_mdaShare(b.shareLiab)];
-      }),[null,'r','r','r','r','r']);
+        return [b.label,b.n.toLocaleString('it-IT'),_mdPct(b.rate),_mdPct(b.pen)];
+      }),[null,'r','r','r']);
     if(m.rho!=null){
       html+=_mdaTable(['Correlazione prezzo di listino / sconto','Valore'],[
         ['Coefficiente di Spearman (&rho;)','<strong>'+(Math.round(m.rho*100)/100).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})+'</strong>'],
@@ -3290,26 +3226,17 @@ function _mdaHtml(m){
   }
   html+='</div>';
 
-  // ── 5. concentrazione e outlier ───────────────────────────────────────────────────
-  html+='<div class="mda-section"><div class="mda-h2">5. Concentrazione e outlier</div>';
-  if(na){ html+=_mdNoData(m,'misurare la concentrazione',true); }
+  // ── 4. outlier ────────────────────────────────────────────────────────────────────
+  html+='<div class="mda-section"><div class="mda-h2">4. Outlier</div>';
+  if(na){ html+=_mdNoData(m,'individuare gli outlier',true); }
   else {
-    html+=_mdaTable(['Concentrazione della liability','Prodotti','Quota dei prodotti scontati'],[
-      ['Prodotti che generano il 50% della liability',m.paretoN50.toLocaleString('it-IT'),
-        _mdPct(m.nMdRows?m.paretoN50/m.nMdRows*100:0)],
-      ['Prodotti che generano l\'80% della liability',m.paretoN80.toLocaleString('it-IT'),
-        _mdPct(m.nMdRows?m.paretoN80/m.nMdRows*100:0)],
-      ['Prodotti scontati in totale',m.nMdRows.toLocaleString('it-IT'),'100,0%'],
-      ['Liability del 10% pi&ugrave; pesante ('+m.top10n.toLocaleString('it-IT')+' prodotti)',
-        _mdPct(m.top10Share)+' della liability','10,0%']
-    ],[null,'r','r']);
-    html+='<p class="mda-sub">I 15 prodotti con la liability maggiore</p>';
-    html+=_mdaTable(['Prodotto','Gruppo','Colore','Listino','Prezzo','Sconto','Liability'],
-      m.topLiab.map(function(r){
+    html+='<p class="mda-sub">I 15 prodotti con lo sconto pi&ugrave; alto</p>';
+    html+=_mdaTable(['Prodotto','Gruppo','Colore','Listino','Prezzo','Sconto'],
+      m.topDisc.map(function(r){
         return ['<strong>'+(r.p.name||'—')+'</strong>',cap(groupLabelWithCategory(r.p.category||'')),
           (r.p.color?_mdSwatch(r.p.color):'—'),_mdEur(r.std),_mdEur(r.price),
-          _mdPct(r.d*100),'<strong>'+_mdEur(r.liab)+'</strong>'];
-      }),[null,null,null,'r','r','r','r']);
+          '<strong>'+_mdPct(r.d*100)+'</strong>'];
+      }),[null,null,null,'r','r','r']);
     html+='<p class="mda-sub">Sconti pari o superiori al 60%</p>';
     if(m.extreme.length){
       html+=_mdaTable(['Prodotto','Gruppo','Colore','Listino','Prezzo','Sconto'],
@@ -3327,13 +3254,11 @@ function _mdaHtml(m){
   }
   html+='</div>';
 
-  // ── 6. indicatori sintetici ───────────────────────────────────────────────────────
-  html+='<div class="mda-section"><div class="mda-h2">6. Indicatori sintetici</div>';
+  // ── 5. indicatori sintetici ───────────────────────────────────────────────────────
+  html+='<div class="mda-section"><div class="mda-h2">5. Indicatori sintetici</div>';
   if(m.hasSignal){
     html+=_mdaTable(['Indicatore','Valore','Definizione'],[
-      ['<strong>Markdown Rate</strong>','<strong>'+_mdPct(m.markdownRate)+'</strong>','Liability / valore a listino'],
-      ['Markdown liability',_mdEur(m.liability),'&Sigma; (listino &minus; prezzo esposto)'],
-      ['Markdown penetration',_mdPct(m.penetration),'prodotti scontati / prodotti con prezzo'],
+      ['<strong>Markdown penetration</strong>','<strong>'+_mdPct(m.penetration)+'</strong>','prodotti scontati / prodotti con prezzo'],
       ['Prezzo medio effettivo',_mdEur(m.avgEffective),'&Sigma; prezzo esposto / prodotti'],
       ['Prezzo medio originale',_mdEur(m.avgOriginal),'&Sigma; listino / prodotti'],
       ['Sconto medio sugli scontati',_mdPct(m.avgDiscDiscounted),'Media di (listino &minus; prezzo) / listino']
@@ -3388,9 +3313,6 @@ function downloadMarkdownAnalysis(bid){
     return 'Non osservabile: nessun prezzo di listino utilizzabile'
       +(m.anomalies?(' ('+m.anomalies.toLocaleString('it-IT')+' righe con listino incoerente, escluse)'):'')+'.';
   }
-  var sumStd=m.rows.reduce(function(a,r){return a+r.std;},0);
-  var sumPrice=m.rows.reduce(function(a,r){return a+r.price;},0);
-
   L.push('# '+m.brand.name+' — analisi del markdown');
   var fl=[];
   if(m.filters.seasons) fl.push('Stagione: '+m.filters.seasons);
@@ -3402,17 +3324,16 @@ function downloadMarkdownAnalysis(bid){
 
   L.push('', '## KPI');
   tbl(['Indicatore','Valore'],[
-    ['Markdown rate',m.hasSignal?_mdPct(m.markdownRate):'n/d'],
-    ['Markdown liability',m.hasSignal?_mdEurTxt(m.liability):'n/d'],
     ['Prodotti in markdown',m.hasSignal?_mdPct(m.penetration):'n/d'],
-    ['Sconto medio sugli scontati',m.hasSignal?_mdPct(m.avgDiscDiscounted):'n/d']
+    ['Sconto medio sugli scontati',m.hasSignal?_mdPct(m.avgDiscDiscounted):'n/d'],
+    ['Prodotti scontati',m.hasSignal?(m.nMd.toLocaleString('it-IT')+' su '+m.nValid.toLocaleString('it-IT')):'n/d'],
+    ['Prezzo medio effettivo',m.hasSignal?_mdEurTxt(m.avgEffective):'n/d']
   ]);
 
   L.push('', '## 1. Profondità dello sconto');
   if(!m.hasSignal){ L.push('', noData()); }
   else {
     tbl(['Indicatore','Valore'],[
-      ['Markdown rate ponderato sull\'assortimento',_mdPct(m.markdownRate)],
       ['Sconto medio semplice sui soli scontati',_mdPct(m.avgDiscDiscounted)],
       ['Prodotti in markdown',m.nMd.toLocaleString('it-IT')+' su '+m.nValid.toLocaleString('it-IT')],
       ['Markdown penetration',_mdPct(m.penetration)],
@@ -3421,29 +3342,12 @@ function downloadMarkdownAnalysis(bid){
     L.push('', '### Distribuzione per fasce di sconto');
     var deepB=m.buckets.filter(function(b){return b.lo>=30;});
     var deep=deepB.reduce(function(a,b){return a+b.n;},0);
-    var deepL=deepB.reduce(function(a,b){return a+b.liab;},0);
-    var bRows=m.buckets.map(function(b){ return [b.label,b.n,_mdPct(b.pct),_mdEurTxt(b.liab),
-      _mdPct(m.liability?b.liab/m.liability*100:0)]; });
-    bRows.push(['Oltre il 30%',deep,_mdPct(m.nMd?deep/m.nMd*100:0),_mdEurTxt(deepL),
-      _mdPct(m.liability?deepL/m.liability*100:0)]);
-    tbl(['Fascia','Prodotti','Quota sugli scontati','Liability','Quota liability'],bRows);
+    var bRows=m.buckets.map(function(b){ return [b.label,b.n,_mdPct(b.pct)]; });
+    bRows.push(['Oltre il 30%',deep,_mdPct(m.nMd?deep/m.nMd*100:0)]);
+    tbl(['Fascia','Prodotti','Quota sugli scontati'],bRows);
   }
 
-  L.push('', '## 2. Impatto economico');
-  if(!m.hasSignal){ L.push('', noData()); }
-  else {
-    tbl(['Indicatore','Valore'],[
-      ['Valore a listino',_mdEurTxt(sumStd)],
-      ['Valore ai prezzi esposti',_mdEurTxt(sumPrice)],
-      ['Markdown liability',_mdEurTxt(m.liability)],
-      ['Prezzo medio originale',_mdEurTxt(m.avgOriginal)],
-      ['Prezzo medio effettivo',_mdEurTxt(m.avgEffective)],
-      ['Differenza sul prezzo medio',_mdEurTxt(m.avgOriginal-m.avgEffective)
-        +' ('+_mdPct(m.avgOriginal?(m.avgOriginal-m.avgEffective)/m.avgOriginal*100:0)+')']
-    ]);
-  }
-
-  L.push('', '## 3. Analisi per colore — brand vs mercato');
+  L.push('', '## 2. Analisi per colore — brand vs mercato');
   if(!m.colorCoverage){ L.push('', 'Il sito non espone il colore dei prodotti: analisi non disponibile.'); }
   else if(!m.hasSignal){ L.push('', noData()); }
   else {
@@ -3456,42 +3360,33 @@ function downloadMarkdownAnalysis(bid){
         e.delta=(e.mkt==null)?null:Math.round((e.rate-e.mkt)*10)/10;
       });
       ranked.sort(function(a,b){
-        if(a.delta==null&&b.delta==null) return b.liab-a.liab;
+        if(a.delta==null&&b.delta==null) return b.n-a.n;
         if(a.delta==null) return 1; if(b.delta==null) return -1;
         return b.delta-a.delta;
       });
-      tbl(['Colore','Prodotti','Sconto brand','Sconto mercato','Δ punti','Prodotti mercato','Brand mercato','Liability','Quota'],
+      tbl(['Colore','Prodotti','Sconto brand','Sconto mercato','Δ punti','Prodotti mercato','Brand mercato'],
         ranked.map(function(e){
           return [e.color,e.n,_mdPct(e.rate),(e.mkt==null?'—':_mdPct(e.mkt)),
-            (e.delta==null?'—':_mdPts(e.delta)),(e.mkt==null?'—':e.mktN),(e.mkt==null?'—':e.mktBrands),
-            _mdEurTxt(e.liab),_mdPct(e.shareLiab)];
+            (e.delta==null?'—':_mdPts(e.delta)),(e.mkt==null?'—':e.mktN),(e.mkt==null?'—':e.mktBrands)];
         }));
       L.push('', '> Righe ordinate per scostamento dal mercato. Mercato = soli brand che espongono il listino ('
         +mk.nUsed+' su '+mk.nPeers+': '+mk.usedBrands.join(', ')+'), ristretto ai product group presidiati dal brand. '
         +'Celle soppresse sotto 30 prodotti o 3 brand peer; colori sotto 5 prodotti esclusi dalla classifica.');
     } else {
-      tbl(['Colore','Prodotti','Sconto brand','Penetration','Liability','Quota','Cumulata'],
-        ranked.map(function(e){ return [e.color,e.n,_mdPct(e.rate),_mdPct(e.pen),_mdEurTxt(e.liab),
-          _mdPct(e.shareLiab),_mdPct(e.cum)]; }));
+      tbl(['Colore','Prodotti','Sconto brand','Penetration'],
+        ranked.map(function(e){ return [e.color,e.n,_mdPct(e.rate),_mdPct(e.pen)]; }));
       L.push('', '> Nessun brand peer espone il listino sui product group di questo brand: confronto non disponibile.');
     }
-    L.push('', '### Pareto dei colori sul markdown totale');
-    tbl(['Colore','Liability','Quota','Cumulata','Penetration'],
-      m.colors.map(function(e){ return [e.color,_mdEurTxt(e.liab),_mdPct(e.shareLiab),_mdPct(e.cum),_mdPct(e.pen)]; }));
-    var colLiab=m.colors.reduce(function(a,e){return a+e.liab;},0);
     var notes=[];
     if(m.colorCoverage<100) notes.push('Copertura del colore: '+m.colorCoverage+'% dei prodotti in vista.');
-    if(m.liability&&colLiab<m.liability*0.999) notes.push('La cumulata si ferma a '+_mdPct(colLiab/m.liability*100)
-      +': il restante '+_mdEurTxt(m.liability-colLiab)+' ricade su prodotti privi di colore.');
     if(notes.length) L.push('', '> '+notes.join(' '));
   }
 
-  L.push('', '## 4. Relazione prezzo – sconto');
+  L.push('', '## 3. Relazione prezzo – sconto');
   if(!m.hasSignal){ L.push('', noData()); }
   else {
-    tbl(['Fascia di listino','Prodotti','Sconto medio','Penetration','Liability','Quota liability'],
-      m.priceBuckets.map(function(b){ return [b.labelTxt,b.n,_mdPct(b.rate),_mdPct(b.pen),
-        _mdEurTxt(b.liab),_mdPct(b.shareLiab)]; }));
+    tbl(['Fascia di listino','Prodotti','Sconto medio','Penetration'],
+      m.priceBuckets.map(function(b){ return [b.labelTxt,b.n,_mdPct(b.rate),_mdPct(b.pen)]; }));
     if(m.rho!=null){
       tbl(['Correlazione prezzo di listino / sconto','Valore'],[
         ['Coefficiente di Spearman (ρ)',(Math.round(m.rho*100)/100).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2})],
@@ -3502,20 +3397,14 @@ function downloadMarkdownAnalysis(bid){
       +'le righe valide incluse quelle a sconto zero. ρ va da −1 a +1: positivo se lo sconto cresce col prezzo di listino.');
   }
 
-  L.push('', '## 5. Concentrazione e outlier');
+  L.push('', '## 4. Outlier');
   if(!m.hasSignal){ L.push('', noData()); }
   else {
-    tbl(['Concentrazione della liability','Prodotti','Quota dei prodotti scontati'],[
-      ['Prodotti che generano il 50% della liability',m.paretoN50,_mdPct(m.nMdRows?m.paretoN50/m.nMdRows*100:0)],
-      ['Prodotti che generano l\'80% della liability',m.paretoN80,_mdPct(m.nMdRows?m.paretoN80/m.nMdRows*100:0)],
-      ['Prodotti scontati in totale',m.nMdRows,'100,0%'],
-      ['Liability del 10% più pesante ('+m.top10n+' prodotti)',_mdPct(m.top10Share)+' della liability','10,0%']
-    ]);
-    L.push('', '### I 15 prodotti con la liability maggiore');
-    tbl(['Prodotto','Gruppo','Colore','Listino','Prezzo','Sconto','Liability'],
-      m.topLiab.map(function(r){
+    L.push('', '### I 15 prodotti con lo sconto più alto');
+    tbl(['Prodotto','Gruppo','Colore','Listino','Prezzo','Sconto'],
+      m.topDisc.map(function(r){
         return [(r.p.name||'—'),cap(groupLabelWithCategory(r.p.category||'')),(r.p.color||'—'),
-          _mdEurTxt(r.std),_mdEurTxt(r.price),_mdPct(r.d*100),_mdEurTxt(r.liab)];
+          _mdEurTxt(r.std),_mdEurTxt(r.price),_mdPct(r.d*100)];
       }));
     L.push('', '### Sconti pari o superiori al 60%');
     if(m.extreme.length){
@@ -3531,11 +3420,9 @@ function downloadMarkdownAnalysis(bid){
     }
   }
 
-  L.push('', '## 6. Indicatori sintetici');
+  L.push('', '## 5. Indicatori sintetici');
   if(m.hasSignal){
     tbl(['Indicatore','Valore','Definizione'],[
-      ['Markdown Rate',_mdPct(m.markdownRate),'Liability / valore a listino'],
-      ['Markdown liability',_mdEurTxt(m.liability),'Σ (listino − prezzo esposto)'],
       ['Markdown penetration',_mdPct(m.penetration),'prodotti scontati / prodotti con prezzo'],
       ['Prezzo medio effettivo',_mdEurTxt(m.avgEffective),'Σ prezzo esposto / prodotti'],
       ['Prezzo medio originale',_mdEurTxt(m.avgOriginal),'Σ listino / prodotti'],
