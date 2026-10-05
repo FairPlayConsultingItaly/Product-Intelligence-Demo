@@ -1185,6 +1185,11 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
         <option value="all">Tutti</option>
       </select>
       <div class="tdiv"></div>
+      <span class="filter-label">Colore</span>
+      <select class="filter-select" id="mkt-color" onchange="triggerMarketRender()">
+        <option value="all">Tutti</option>
+      </select>
+      <div class="tdiv"></div>
       <span class="filter-label">Price</span>
       <input type="number" class="market-price-input" id="mkt-pmin" placeholder="Min \u20AC" onchange="triggerMarketRender()">
       <span style="color:#bbb;font-size:.9rem">&#8212;</span>
@@ -1206,6 +1211,13 @@ header{background:#fff;border-bottom:3px solid var(--red);padding:10px 28px;
       <div class="chart-inner" style="height:500px" id="mkt-scatter-wrap">
         <canvas id="mkt-scatter"></canvas>
       </div>
+    </div>
+    <div class="chart-card" style="margin-bottom:18px">
+      <div class="chart-title">
+        <span style="flex:1">Distribuzione dei prezzi per brand &#8212; media, quartili e 10&#176;/90&#176; percentile</span>
+        <button class="btn-zoom" onclick="downloadMarketBoxplotData()" title="Scarica dati sorgente (Excel)">&#11015;</button>
+      </div>
+      <div class="chart-inner-boxplot" id="mkt-box-wrap"><canvas id="mkt-boxplot"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">
@@ -1773,6 +1785,7 @@ var _allCatsFiltered = [];
 var _loadedSeasons = {};
 var marketGenders = [];
 var marketCat = 'all';
+var marketColor = 'all';
 var marketPriceMin = null;
 var marketPriceMax = null;
 var marketSkuMin = null;
@@ -5236,15 +5249,19 @@ function getGroupGenderRows(bid){
   var keys={};
   Object.keys(B.m).forEach(function(k){keys[k]=1;});
   Object.keys(M.m).forEach(function(k){keys[k]=1;});
+  // I prodotti hanno il genere in codice (M/F/K/U), la tabella lavora coi nomi di
+  // GG_GENDERS: senza questa conversione nessuna cella trovava la propria riga.
+  var _GENDER_EN_FROM_CODE={M:'Men',F:'Women',K:'Kids',U:'Unisex'};
   var out=Object.keys(keys).map(function(k){
     var parts=k.split('|'), be=B.m[k], me=M.m[k];
     return {
-      brand_id:bid, product_group:parts[0], gender:parts[1],
+      brand_id:bid, category:categoryOfGroup(parts[0])||'', product_group:parts[0],
+      gender:_GENDER_EN_FROM_CODE[parts[1]]||parts[1],
       brand_n_sku:be?be.n:0,
-      brand_avg_price:(Bp.m[k]&&Bp.m[k].np)?(Bp.m[k].sum/Bp.m[k].np):null,
+      brand_avg_price:(Bp.m[k]&&Bp.m[k].np)?roundPrice(Bp.m[k].sum/Bp.m[k].np):null,
       brand_pct_mix:(be&&B.tot)?(be.n/B.tot*100):0,
       market_n_sku:me?me.n:0,
-      market_avg_price:(Mp.m[k]&&Mp.m[k].np)?(Mp.m[k].sum/Mp.m[k].np):null,
+      market_avg_price:(Mp.m[k]&&Mp.m[k].np)?roundPrice(Mp.m[k].sum/Mp.m[k].np):null,
       market_pct_mix:(me&&M.tot)?(me.n/M.tot*100):0,
       market_n_brands:me?Object.keys(me.brands).length:0
     };
@@ -5386,7 +5403,7 @@ function renderGroupGenderTable(containerId, bid){
   html+='<div class="gg-legend">Colonna <b>Brand</b>: prezzo medio del brand selezionato per quel group &times; gender. '
     +'Colonna <b>Market</b> (separata dalla linea rossa): prezzo medio calcolato su TUTTI gli altri brand del dataset, senza alcun filtro. '
     +'<span class="gg-hi-badge" style="position:static">&#9650;</span>/<span class="gg-hi-badge" style="position:static">&#9660;</span> = differenza vs mercato ≥ 25% sul prezzo o ≥25 punti sul mix %. '
-    +'Dati generati il '+(GG_TABLE_DATA.generated||'?')+' — <a href="#" onclick="downloadGroupGenderTable(\''+bid+'\');return false;">scarica questi dati in Excel</a>.</div>';
+    +'Valori calcolati sui prodotti caricati, con i filtri attivi — <a href="#" onclick="downloadGroupGenderTable(\''+bid+'\');return false;">scarica questi dati in Excel</a>.</div>';
   container.innerHTML=html;
 }
 // Categorie con 0 SKU per il brand ma presenti nel mercato peer (Company_list.xlsx),
@@ -5418,7 +5435,6 @@ function downloadGroupGenderTable(bid){
   var aoa=[
     ["Brand", brandLabel],
     ["Exported", new Date().toISOString().slice(0,10)],
-    ["Data generated", GG_TABLE_DATA.generated||''],
     []
   ];
   aoa.push(["Category","Gruppo prodotto","Gender","N. prodotti brand","Prezzo medio brand","Prezzo medio mercato","N. brand mercato"]);
@@ -7311,7 +7327,7 @@ function openMarket(){
   ensureAllBrandsLoaded(function(){ _openMarket(); });
 }
 function _openMarket(){
-  marketGenders=[]; marketCat='all'; marketPriceMin=null; marketPriceMax=null; marketSkuMin=null; marketSkuMax=null; marketShowRetailers=false; marketHiddenBrands={};
+  marketGenders=[]; marketCat='all'; marketColor='all'; marketPriceMin=null; marketPriceMax=null; marketSkuMin=null; marketSkuMax=null; marketShowRetailers=false; marketHiddenBrands={};
   ['M','F','K'].forEach(function(v){ var el=document.getElementById('mgc-'+v); if(el) el.className='finder-chip'; });
   var catSel=document.getElementById('mkt-cat');
   if(catSel){
@@ -7319,6 +7335,21 @@ function _openMarket(){
     var html='<option value="all">Tutti</option>';
     cats.forEach(function(c){ html+='<option value="'+c+'">'+cap(c)+'</option>'; });
     catSel.innerHTML=html; catSel.value='all';
+  }
+  // Colori: presi dai prodotti realmente caricati (p.color = colore primario),
+  // non da una lista fissa -- per 3 brand il sito non lo espone e la voce non deve comparire.
+  var colSel=document.getElementById('mkt-color');
+  if(colSel){
+    var seen={};
+    BRANDS.forEach(function(b){
+      (RAW_DATA[b.id]||[]).forEach(function(p){
+        if(p.color && p.price>0) seen[p.color]=(seen[p.color]||0)+1;
+      });
+    });
+    var colNames=Object.keys(seen).sort(function(a,b){return a.localeCompare(b,'it');});
+    var cHtml='<option value="all">Tutti</option>';
+    colNames.forEach(function(c){ cHtml+='<option value="'+c+'">'+cap(c)+' ('+seen[c]+')</option>'; });
+    colSel.innerHTML=cHtml; colSel.value='all';
   }
   var pmin=document.getElementById('mkt-pmin'); if(pmin) pmin.value='';
   var pmax=document.getElementById('mkt-pmax'); if(pmax) pmax.value='';
@@ -7349,6 +7380,7 @@ function setMarketGender(g){
 }
 function triggerMarketRender(){
   marketCat=(document.getElementById('mkt-cat')||{value:'all'}).value;
+  marketColor=(document.getElementById('mkt-color')||{value:'all'}).value;
   var pmin=document.getElementById('mkt-pmin'), pmax=document.getElementById('mkt-pmax');
   marketPriceMin=pmin&&pmin.value?parseFloat(pmin.value):null;
   marketPriceMax=pmax&&pmax.value?parseFloat(pmax.value):null;
@@ -7362,6 +7394,7 @@ function getMarketFiltered(bid){
     if(!p.price||p.price<=0) return false;
     if(marketGenders.length>0&&marketGenders.indexOf(p.gender)<0) return false;
     if(marketCat!=='all'&&p.category!==marketCat) return false;
+    if(marketColor!=='all'&&p.color!==marketColor) return false;
     if(marketPriceMin!==null&&p.price<marketPriceMin) return false;
     if(marketPriceMax!==null&&p.price>marketPriceMax) return false;
     return true;
@@ -7437,7 +7470,253 @@ function renderMarketScatter(){
     }}]
   });
   buildMarketBrandChips();
+  renderMarketBoxplot();
 }
+// ── BOXPLOT PREZZI PER BRAND (Panoramica di mercato) ──────────────────────
+// Un box per brand, sui prodotti che passano i filtri della barra in alto
+// (genere, categoria, colore, prezzo, n. prodotti) e sui soli brand non
+// nascosti dai chip "Brands in view" -- gli stessi controlli che governano lo
+// scatter, cosi' i due grafici mostrano sempre la stessa fetta di mercato.
+//
+// Differenza voluta rispetto a drawBox() usato nelle schede brand: la linea
+// piena al centro del box e' la MEDIA, non la mediana (la mediana resta nel
+// tooltip e nell'export). I baffi sono P10-P90, non min-max.
+var _mktBoxData = [];   // stats per brand, nell'ordine in cui sono disegnati
+var _mktBoxHit  = [];   // {x0,x1,i} per il tooltip al passaggio del mouse
+var _mktBoxGeom = null; // {ml,mt,pw,ph,gMin,gMax} per posizionare il tooltip
+
+function getMarketBoxStats(){
+  var out=[];
+  for(var i=0;i<BRANDS.length;i++){
+    var b=BRANDS[i];
+    if(marketHiddenBrands[b.id]) continue;
+    if(!marketShowRetailers && _RETAILER_IDS[b.id]) continue;
+    var prods=getMarketFiltered(b.id);
+    if(!prods.length) continue;
+    // stessi cutoff su n. prodotti dello scatter, per non mostrare qui brand
+    // che li' sono stati esclusi
+    if(marketSkuMin!==null&&prods.length<marketSkuMin) continue;
+    if(marketSkuMax!==null&&prods.length>marketSkuMax) continue;
+    var vals=prods.map(function(p){return p.price;})
+                  .filter(function(v){return typeof v==='number'&&isFinite(v)&&v>0;});
+    if(!vals.length) continue;
+    var st=computeStats(vals);
+    if(st) out.push({bid:b.id,name:b.name,color:b.color||'#CC0000',st:st,n:vals.length});
+  }
+  out.sort(function(a,b){return b.st.mean-a.st.mean;});
+  return out;
+}
+
+function renderMarketBoxplot(){
+  _mktBoxData=getMarketBoxStats(); _mktBoxHit=[]; _mktBoxGeom=null;
+  var canvas=document.getElementById('mkt-boxplot'); if(!canvas) return;
+  var wrap=document.getElementById('mkt-box-wrap');
+  var W=wrap?(wrap.clientWidth||420):420, H=wrap?(wrap.clientHeight||380):380;
+  var n=_mktBoxData.length;
+
+  // Larghezza minima per slot: il nome del brand deve starci senza sconfinare
+  // sul vicino. Se non basta la larghezza del contenitore si allarga il canvas
+  // e si scrolla in orizzontale (.chart-inner-boxplot ha overflow-x:auto),
+  // invece di comprimere i box -- stesso rimedio di drawBoxplotGrouped.
+  var mctx=canvas.getContext('2d'); mctx.font='10px Arial';
+  var maxLbl=0;
+  _mktBoxData.forEach(function(d){
+    _bpSplitLabel(d.name).forEach(function(line){
+      var w=mctx.measureText(line).width; if(w>maxLbl) maxLbl=w;
+    });
+  });
+  var minSlot=Math.max(64,Math.ceil(maxLbl)+16);
+  var neededW=72+14+minSlot*Math.max(1,n);
+  if(neededW>W){ W=neededW; if(wrap) wrap.style.overflowX='auto'; }
+  else if(wrap){ wrap.style.overflowX=''; }
+
+  var DPR=window.devicePixelRatio||1;
+  canvas.width=W*DPR; canvas.height=H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  var ctx=canvas.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0); ctx.scale(DPR,DPR); ctx.clearRect(0,0,W,H);
+  _mktHideBoxTip();
+  if(!n){ drawNoData(ctx,W,H); return; }
+
+  // Scala Y: comprende baffi e box di tutti i brand a video
+  var allP=[];
+  _mktBoxData.forEach(function(d){
+    allP.push(d.st.p10,d.st.p90,d.st.q1,d.st.q3,d.st.mean);
+  });
+  var dataMin=Math.min.apply(null,allP), dataMax=Math.max.apply(null,allP);
+  var rawRange=dataMax-dataMin||40;
+  var rawStep=niceNumber(rawRange/5);
+  var gMin=Math.floor(Math.max(0,dataMin-rawRange*0.05)/rawStep)*rawStep;
+  var gMax=Math.ceil((dataMax+rawRange*0.05)/rawStep)*rawStep;
+  if(gMax<=gMin) gMax=gMin+rawStep;
+
+  var lblSpace=40, legendRowH=22;
+  var ml=72, mr=14, mt=26, mb=lblSpace+legendRowH;
+  var pw=W-ml-mr, ph=H-mt-mb;
+  function ys(v){ return mt+ph-((v-gMin)/(gMax-gMin))*ph; }
+  _mktBoxGeom={ml:ml,mt:mt,pw:pw,ph:ph};
+
+  // Griglia: linee piene sottili, mai tratteggiate (il tratteggio qui sotto e'
+  // riservato alla media di mercato, che e' un riferimento, non una griglia)
+  for(var tv=gMin;tv<=gMax+rawStep*0.01;tv+=rawStep){
+    var ty=ys(tv);
+    ctx.strokeStyle='#ebebeb'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(ml,ty); ctx.lineTo(ml+pw,ty); ctx.stroke();
+    ctx.fillStyle='#888'; ctx.font='10px Arial'; ctx.textAlign='right';
+    ctx.fillText('€'+Math.round(tv),ml-5,ty+4);
+  }
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(ml,mt); ctx.lineTo(ml,mt+ph); ctx.stroke();
+
+  // Media di mercato = media delle medie dei brand a video (stessa definizione
+  // della linea "Avg price" dello scatter, cosi' i due grafici concordano)
+  var mktMean=0;
+  _mktBoxData.forEach(function(d){ mktMean+=d.st.mean; });
+  mktMean=mktMean/n;
+  var myMean=ys(mktMean);
+  ctx.save();
+  ctx.strokeStyle='#bbb'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(ml,myMean); ctx.lineTo(ml+pw,myMean); ctx.stroke();
+  ctx.setLineDash([]);
+  // L'etichetta cade in mezzo ai box: senza uno sfondo pieno si legge sopra i
+  // baffi e le linee di media dei brand a destra.
+  var mkLbl='Media di mercato €'+Math.round(mktMean);
+  ctx.font='bold 9px Arial'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  var mkW=ctx.measureText(mkLbl).width;
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(ml+pw-2-mkW-4,myMean-12,mkW+8,12);
+  ctx.fillStyle='#999';
+  ctx.fillText(mkLbl,ml+pw-4,myMean-6);
+  ctx.textBaseline='alphabetic';
+  ctx.restore();
+
+  var slotW=pw/n, bw=Math.min(slotW*0.56,52);
+  for(var i2=0;i2<n;i2++){
+    var d2=_mktBoxData[i2], st=d2.st, cx=ml+slotW*i2+slotW/2, col=d2.color;
+    _mktBoxHit.push({x0:ml+slotW*i2,x1:ml+slotW*(i2+1),i:i2});
+
+    // baffi P10-P90
+    ctx.strokeStyle=col+'66'; ctx.lineWidth=1.25;
+    ctx.beginPath(); ctx.moveTo(cx,ys(st.p90)); ctx.lineTo(cx,ys(st.p10)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-bw*0.28,ys(st.p10)); ctx.lineTo(cx+bw*0.28,ys(st.p10)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-bw*0.28,ys(st.p90)); ctx.lineTo(cx+bw*0.28,ys(st.p90)); ctx.stroke();
+
+    // box Q1-Q3
+    var bTop=ys(st.q3), bH=Math.max(1,ys(st.q1)-ys(st.q3));
+    ctx.fillStyle=col+'22'; ctx.fillRect(cx-bw/2,bTop,bw,bH);
+    ctx.strokeStyle=col; ctx.lineWidth=1.25; ctx.strokeRect(cx-bw/2,bTop,bw,bH);
+
+    // MEDIA: la linea piena centrale (al posto della mediana)
+    ctx.strokeStyle=col; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(cx-bw/2,ys(st.mean)); ctx.lineTo(cx+bw/2,ys(st.mean)); ctx.stroke();
+
+    // n= sopra il baffo: un prezzo medio alto su pochi SKU non deve leggersi
+    // come equivalente a uno su un campione grande
+    ctx.fillStyle='#726e6e'; ctx.font='700 10px Archivo,Arial'; ctx.textAlign='center';
+    ctx.fillText('n='+d2.n,cx,Math.max(ys(st.p90)-7,mt+9));
+
+    // nome brand sotto, orizzontale, su due righe se lungo
+    ctx.fillStyle=COLOR_INK; ctx.font='10px Arial'; ctx.textAlign='center';
+    var lines=_bpSplitLabel(d2.name);
+    if(lines.length>1){
+      ctx.fillText(lines[0],cx,mt+ph+16);
+      ctx.fillText(lines[1],cx,mt+ph+28);
+    } else {
+      ctx.fillText(lines[0],cx,mt+ph+16);
+    }
+  }
+
+  // Legenda: senza, "media" e "10-90 percentile" non sono deducibili dal disegno
+  var ly=H-8, lx=ml;
+  ctx.textAlign='left'; ctx.font='10px Arial';
+  ctx.strokeStyle='#999'; ctx.lineWidth=1.25;
+  ctx.beginPath(); ctx.moveTo(lx,ly-8); ctx.lineTo(lx+14,ly-8); ctx.stroke();
+  ctx.fillStyle='#666'; ctx.fillText('baffi = 10°-90° percentile',lx+19,ly-4);
+  lx+=19+ctx.measureText('baffi = 10°-90° percentile').width+18;
+  ctx.fillStyle='#99999922'; ctx.fillRect(lx,ly-14,14,12);
+  ctx.strokeStyle='#999'; ctx.strokeRect(lx,ly-14,14,12);
+  ctx.fillStyle='#666'; ctx.fillText('box = Q1-Q3',lx+19,ly-4);
+  lx+=19+ctx.measureText('box = Q1-Q3').width+18;
+  ctx.strokeStyle='#666'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(lx,ly-8); ctx.lineTo(lx+14,ly-8); ctx.stroke();
+  ctx.fillStyle='#666'; ctx.fillText('linea piena = media',lx+19,ly-4);
+
+  _mktBindBoxTooltip();
+}
+
+// ── Tooltip al passaggio del mouse ────────────────────────────────────────
+// Il canvas non ha marks DOM su cui appendere eventi: si intercetta il
+// mousemove sul canvas e si risale allo slot dal solo x. Il riquadro vive nel
+// wrapper (che e' position:relative) e segue lo scroll orizzontale.
+function _mktBoxTipEl(){
+  var el=document.getElementById('mkt-box-tip');
+  if(!el){
+    var wrap=document.getElementById('mkt-box-wrap'); if(!wrap) return null;
+    el=document.createElement('div');
+    el.id='mkt-box-tip';
+    el.style.cssText='position:absolute;pointer-events:none;display:none;z-index:5;'
+      +'background:rgba(255,255,255,.97);border:1px solid #ddd;border-radius:6px;'
+      +'box-shadow:0 2px 10px rgba(0,0,0,.12);padding:8px 10px;font:11px/1.5 Arial;'
+      +'color:#333;white-space:nowrap';
+    wrap.appendChild(el);
+  }
+  return el;
+}
+function _mktHideBoxTip(){ var el=document.getElementById('mkt-box-tip'); if(el) el.style.display='none'; }
+function _mktBindBoxTooltip(){
+  var canvas=document.getElementById('mkt-boxplot'); if(!canvas||canvas._mktTipBound) return;
+  canvas._mktTipBound=true;
+  canvas.addEventListener('mousemove',function(e){
+    var el=_mktBoxTipEl(); if(!el||!_mktBoxGeom) return;
+    var r=canvas.getBoundingClientRect();
+    var x=e.clientX-r.left, y=e.clientY-r.top;
+    var hit=null;
+    for(var i=0;i<_mktBoxHit.length;i++){
+      if(x>=_mktBoxHit[i].x0 && x<_mktBoxHit[i].x1){ hit=_mktBoxHit[i]; break; }
+    }
+    if(!hit || y<_mktBoxGeom.mt || y>_mktBoxGeom.mt+_mktBoxGeom.ph){ el.style.display='none'; return; }
+    var d=_mktBoxData[hit.i], s=d.st;
+    var eur=function(v){ return '€'+Math.round(v); };
+    el.innerHTML='<b style="color:'+d.color+'">'+d.name+'</b><br>'
+      +'Media <b>'+eur(s.mean)+'</b> &middot; mediana '+eur(s.median)+'<br>'
+      +'Q1-Q3 '+eur(s.q1)+' - '+eur(s.q3)+'<br>'
+      +'P10-P90 '+eur(s.p10)+' - '+eur(s.p90)+'<br>'
+      +d.n+' prodotti';
+    var wrap=document.getElementById('mkt-box-wrap');
+    var left=x+14, top=Math.max(2,y-10);
+    el.style.display='block';
+    // se il riquadro uscirebbe a destra del canvas, lo si ribalta a sinistra
+    if(left+el.offsetWidth>canvas.clientWidth-4) left=x-el.offsetWidth-14;
+    el.style.left=(left-(wrap?wrap.scrollLeft:0))+'px';
+    el.style.top=top+'px';
+  });
+  canvas.addEventListener('mouseleave',_mktHideBoxTip);
+}
+
+// Export: il boxplot deve avere un equivalente leggibile in tabella, non solo
+// i valori nel tooltip.
+function downloadMarketBoxplotData(){
+  if(!_mktBoxData.length){ alert('Nessun dato da esportare con i filtri attuali.'); return; }
+  var meta=[
+    ['FairPlay Product Intelligence - Distribuzione prezzi per brand'],
+    ['Exported', new Date().toISOString().slice(0,10)],
+    ['Filtro genere', marketGenders.length?marketGenders.join(', '):'all'],
+    ['Filtro categoria', marketCat],
+    ['Filtro colore', marketColor],
+    ['Fascia di prezzo (EUR)', (marketPriceMin!==null?marketPriceMin:'-')+' - '+(marketPriceMax!==null?marketPriceMax:'-')],
+    ['Intervallo n. prodotti', (marketSkuMin!==null?marketSkuMin:'-')+' - '+(marketSkuMax!==null?marketSkuMax:'-')],
+    ['Brand esclusi', Object.keys(marketHiddenBrands).length?Object.keys(marketHiddenBrands).join(', '):'nessuno'],
+    []
+  ];
+  var header=['Brand','N. prodotti','Media (EUR)','Mediana (EUR)','Q1 (EUR)','Q3 (EUR)','P10 (EUR)','P90 (EUR)','Min (EUR)','Max (EUR)'];
+  var rows=_mktBoxData.map(function(d){
+    var s=d.st;
+    return [d.name,d.n,roundPrice(s.mean),roundPrice(s.median),roundPrice(s.q1),
+            roundPrice(s.q3),roundPrice(s.p10),roundPrice(s.p90),roundPrice(s.min),roundPrice(s.max)];
+  });
+  downloadXLSX('FairPlay_Market_Boxplot',[{name:'Distribuzione prezzi', aoa: meta.concat([header]).concat(rows)}]);
+}
+
 function buildMarketBrandChips(){
   var wrap=document.getElementById('mkt-brand-chips'); if(!wrap) return;
   var sorted=BRANDS.slice().sort(function(a,b){return a.name.localeCompare(b.name,'it');});
